@@ -8,6 +8,8 @@ package chatapplication_server.components.ServerSocketEngine;
 import SocketActionMessages.ChatMessage;
 import chatapplication_server.components.ConfigManager;
 import chatapplication_server.statistics.ServerStatistics;
+import crypto.cryptoManager;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -16,12 +18,7 @@ import java.io.StreamCorruptedException;
 import javax.crypto.*;
 import javax.net.ssl.SSLSocket;
 import java.net.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import java.util.Base64;
 import java.util.Vector;
 
 import java.security.SecureRandom;
@@ -348,32 +345,12 @@ public class SocketConnectionHandler implements Runnable
                 switch(cm.getType()) 
                 {
                 case ChatMessage.MESSAGE:
+                        System.out.println("SERVER RECEIVED A MESSAGE!");
+                        System.out.println("SERVER RECEIVED A MESSAGE! ENCRYPTED: "+ message);
+                        String dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.key);
+                        System.out.println("SERVER RECEIVED A MESSAGE! DECRYPTED: "+ dec_chatMsg);
 
-                        byte[] IV = message.substring(0,28).getBytes();
-                        //String IV2 = message.substring(0,GCM_IV_LENGTH-1);
-                        //System.out.println(IV2.getBytes());
-                        System.out.println("message: " + message);
-                        String msg = message.substring(28);
-                        System.out.println("encrypted: " + msg);
-                        System.out.println("IV: " + IV);
-                    //System.out.println("IV2: " + IV2);
-                    try {
-                        message = decrypt(msg, IV);
-                        System.out.println("decrypted: " + message);
-                    } catch (NoSuchPaddingException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchAlgorithmException e) {
-                        e.printStackTrace();
-                    } catch (InvalidAlgorithmParameterException e) {
-                        e.printStackTrace();
-                    } catch (InvalidKeyException e) {
-                        e.printStackTrace();
-                    } catch (BadPaddingException e) {
-                        e.printStackTrace();
-                    } catch (IllegalBlockSizeException e) {
-                        e.printStackTrace();
-                    }
-                    SocketServerEngine.getInstance().broadcast(userName + ": " + message);
+                        SocketServerEngine.getInstance().broadcast(userName + ": " + message);
                         break;
                 case ChatMessage.LOGOUT:
                         SocketServerGUI.getInstance().appendEvent(userName + " disconnected with a LOGOUT message.\n");
@@ -418,6 +395,8 @@ public class SocketConnectionHandler implements Runnable
                 
                 /** Change the socket status... */
                 isSocketOpen = false;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

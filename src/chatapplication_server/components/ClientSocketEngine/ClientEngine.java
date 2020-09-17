@@ -18,16 +18,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import java.net.*;
-import java.util.Base64;
-
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
+import crypto.cryptoManager;
 /**
  *
  * @author atgianne
@@ -87,7 +81,7 @@ public class ClientEngine extends GenericThreadedComponent
      * This method is called upon initialize of the ClientEngine component and handles any configuration that needs to be
      * done in the client before it connects to the Chat Application Server.
      * 
-     * //@see IComponent interface.
+     * @see //IComponent interface.
      */
     public void initialize() throws ComponentInitException
     {
@@ -166,21 +160,12 @@ public class ClientEngine extends GenericThreadedComponent
         {
             byte[] cipherText = encryptMsg(msg.getMessage(), IV);
 
-            System.out.println("cipher: " + Base64.getEncoder().encodeToString(cipherText));
-            //String IVstring = new String(IV, "ISO-8859-1");
-            //String IVstring = IV.toString();
-            //String cipherTextString = cipherText.toString();
-            //String IVstring = Base64.getEncoder().encodeToString(cipherText);
-            //String IVandCipher = IVstring.concat(Base64.getEncoder().encodeToString(cipherText));
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-            outputStream.write( IV );
-            outputStream.write( cipherText );
+            String ciphertext = cryptoManager.encrypt(msg.getMessage(), cryptoManager.key);
 
-            byte IvAndCipherByte[] = outputStream.toByteArray( );
+            ChatMessage result = new ChatMessage(msg.getType(), ciphertext);
+            System.out.println("ENCRYPTED RESULT: " + result.getMessage());
 
-            String IVandCipher = Base64.getEncoder().encodeToString(IvAndCipherByte);
-            ChatMessage encryptedMessage = new ChatMessage(msg.getType(), IVandCipher);
-            socketWriter.writeObject(encryptedMessage);
+            socketWriter.writeObject(result);
 
         }
         catch( IOException e )
