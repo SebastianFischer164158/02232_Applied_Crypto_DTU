@@ -24,6 +24,8 @@ public class ListenFromServer extends Thread
                 {
                     try
                     {
+                        System.out.println("THE CLIENT (ME) RECEIVED A MESSAGE!");
+
                         String msg = (String) sInput.readObject();
                     
                         if(msg.contains( "#" ))
@@ -32,6 +34,7 @@ public class ListenFromServer extends Thread
                         }
                         else
                         {
+                            System.out.println("THE CLIENT (ME) RECEIVED A REAL CHAT MESSAGE!");
                             ClientSocketGUI.getInstance().append(msg + "\n");
                         }
                     }

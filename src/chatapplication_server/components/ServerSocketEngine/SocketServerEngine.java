@@ -11,10 +11,7 @@ import chatapplication_server.components.base.GenericThreadedComponent;
 import chatapplication_server.exception.ComponentInitException;
 import chatapplication_server.statistics.ServerStatistics;
 import java.net.ServerSocket;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
 import java.util.*;
-import java.io.*;
 import java.net.*;
 import java.text.SimpleDateFormat;
 
@@ -353,6 +350,7 @@ public class SocketServerEngine extends GenericThreadedComponent
      */
     public void broadcast( String message )
     {
+        System.out.println("I BROADCASTED A MESSAGE WUHU!");
         SimpleDateFormat sdf = new SimpleDateFormat( "HH:mm:ss" );
         
         // add HH:mm:ss and \n to the message

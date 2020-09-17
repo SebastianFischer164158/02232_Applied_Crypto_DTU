@@ -6,10 +6,9 @@
 package chatapplication_server.components.ClientSocketEngine;
 
 import SocketActionMessages.ChatMessage;
+import crypto.CryptoManager;
 import chatapplication_server.ComponentManager;
 import chatapplication_server.components.ConfigManager;
-import chatapplication_server.components.ServerSocketEngine.SocketServerEngine;
-import chatapplication_server.components.ServerSocketEngine.SocketServerGUI;
 import chatapplication_server.components.base.GenericThreadedComponent;
 import chatapplication_server.exception.ComponentInitException;
 import chatapplication_server.statistics.ServerStatistics;
@@ -18,7 +17,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import java.net.*;
-import java.util.Scanner;
+import java.util.Base64;
 
 /**
  *
@@ -146,12 +145,22 @@ public class ClientEngine extends GenericThreadedComponent
     {
         try 
         {
+            String plainText = "This is a plain text which need to be encrypted by Java AES 256 GCM Encryption Algorithm";
+            System.out.println("Original Text : " + plainText);
+
+            byte[] cipherText = CryptoManager.encrypt(plainText.getBytes(), CryptoManager.key);
+            System.out.println("Encrypted Text : " + Base64.getEncoder().encodeToString(cipherText));
+
+
             socketWriter.writeObject(msg);
+
         }
         catch( IOException e ) 
         {
             System.out.println("Aloha");
             display( "Exception writing to server: " + e );
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
     
