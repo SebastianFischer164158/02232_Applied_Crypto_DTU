@@ -185,8 +185,11 @@ public class P2PClient extends JFrame implements ActionListener
 
         try {
             sOutput.writeObject(new ChatMessage(str.length(), str));
-            display("You: " + str);
-            display("------------------------------------------------------");
+            if (diffieExchange)
+                display("You: " + str);
+
+            System.out.println("You: " + str);
+            System.out.println("------------------------------------------------------");
             sOutput.close();
             socket.close();
         } catch (IOException ex) {
@@ -243,13 +246,12 @@ public class P2PClient extends JFrame implements ActionListener
 
                                     agreedSecret = (int)Math.pow(Integer.parseInt(msg), diffieSecret) % p;
 
-                                    display("p: " + p);
-                                    display("g: " + g);
-                                    display("Sender calculated Value: " + calcedSenderValue);
-                                    display("My choosen Secret: " + diffieSecret);
-                                    display("Agreed Secret: " + agreedSecret);
-                                    display(socket.getInetAddress()+": " + socket.getPort() + ": " + msg);
-                                    display("------------------------------------------------------");
+                                    System.out.println("p: " + p);
+                                    System.out.println("g: " + g);
+                                    System.out.println("Sender calculated Value: " + calcedSenderValue);
+                                    System.out.println("My choosen Secret: " + diffieSecret);
+                                    System.out.println("Agreed Secret: " + agreedSecret);
+                                    System.out.println("------------------------------------------------------");
 
                                     sInput.close();
                                     socket.close();
@@ -257,13 +259,13 @@ public class P2PClient extends JFrame implements ActionListener
                                     peerSecretReceived = true;
                                 } else {
                                     String msg = ((ChatMessage) sInput.readObject()).getMessage();
-                                    display("p: " + p);
-                                    display("g: " + g);
-                                    display("Sender calculated Value: " + calcedSenderValue);
-                                    display("My choosen Secret: " + diffieSecret);
-                                    display("Agreed Secret: " + agreedSecret);
+                                    System.out.println("p: " + p);
+                                    System.out.println("g: " + g);
+                                    System.out.println("Sender calculated Value: " + calcedSenderValue);
+                                    System.out.println("My choosen Secret: " + diffieSecret);
+                                    System.out.println("Agreed Secret: " + agreedSecret);
                                     display(socket.getInetAddress()+": " + socket.getPort() + ": " + msg);
-                                    display("------------------------------------------------------");
+                                    System.out.println("------------------------------------------------------");
                                     sInput.close();
                                     socket.close();
                                 }
