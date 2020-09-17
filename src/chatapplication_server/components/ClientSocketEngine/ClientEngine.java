@@ -11,16 +11,11 @@ import chatapplication_server.components.ConfigManager;
 import chatapplication_server.components.base.GenericThreadedComponent;
 import chatapplication_server.exception.ComponentInitException;
 import chatapplication_server.statistics.ServerStatistics;
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.util.Base64;
 import crypto.cryptoManager;
 /**
  *
@@ -28,13 +23,6 @@ import crypto.cryptoManager;
  */
 public class ClientEngine extends GenericThreadedComponent 
 {
-
-    /** GCM Encryption */
-    public static final int AES_KEY_SIZE = 256;
-    public static final int GCM_IV_LENGTH = 12;
-    public static final int GCM_TAG_LENGTH = 16;
-    public static byte[] key1 = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'};
 
     /** Instance of the ConfigManager component */
     ConfigManager configManager;
@@ -153,12 +141,9 @@ public class ClientEngine extends GenericThreadedComponent
      * @param msg The message to be sent
      */
     public void sendMessage( ChatMessage msg ){
-        byte[] IV = generateIV();
-        System.out.println("IV: " + IV);
 
         try
         {
-            byte[] cipherText = encryptMsg(msg.getMessage(), IV);
 
             String ciphertext = cryptoManager.encrypt(msg.getMessage(), cryptoManager.key);
 
@@ -263,23 +248,4 @@ public class ClientEngine extends GenericThreadedComponent
         super.shutdown();
     }
 
-    public byte[] encryptMsg(String msg, byte[] IV) throws Exception{
-        byte[] plainText = msg.getBytes();
-
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        SecretKeySpec keySpec = new SecretKeySpec(key1, "AES");
-        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV);
-
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParameterSpec);
-        byte[] cipherText = cipher.doFinal(plainText);
-        return cipherText;
-    }
-
-    public byte[] generateIV(){
-        // Generate random IV
-        byte[] IV = new byte[GCM_IV_LENGTH];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(IV);
-        return IV;
-    }
 }

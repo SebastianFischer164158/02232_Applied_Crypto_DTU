@@ -475,26 +475,4 @@ public class SocketConnectionHandler implements Runnable
             notify();
         }
     }
-
-    public static String decrypt(String cipherText, byte[] IV) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        //Charset charset = StandardCharsets.UTF_8;
-        byte[] cipherText2 = DatatypeConverter.parseBase64Binary(cipherText);
-        byte[] IV2 = Arrays.copyOfRange(cipherText2, 0, GCM_IV_LENGTH);
-        byte[] ct = Arrays.copyOfRange(cipherText2, GCM_IV_LENGTH, cipherText2.length);
-
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        //System.out.println("IV: " + new String(IV));
-        //System.out.println("Cipher: " + cipherText);
-        SecretKeySpec keySpec = new SecretKeySpec(key1, "AES");
-
-        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV2);
-
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec);
-        byte[] decryptedText = cipher.doFinal(ct);
-        System.out.println("print6");
-        return new String(decryptedText);
-
-
-
-    }
 }
