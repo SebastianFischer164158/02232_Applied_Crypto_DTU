@@ -11,6 +11,8 @@ import chatapplication_server.components.ConfigManager;
 import chatapplication_server.components.base.GenericThreadedComponent;
 import chatapplication_server.exception.ComponentInitException;
 import chatapplication_server.statistics.ServerStatistics;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -18,13 +20,29 @@ import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.Base64;
 
+import java.security.SecureRandom;
+import java.util.Base64;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 /**
  *
  * @author atgianne
  */
 public class ClientEngine extends GenericThreadedComponent 
 {
-     /** Instance of the ConfigManager component */
+
+    /** GCM Encryption */
+    public static final int AES_KEY_SIZE = 256;
+    public static final int GCM_IV_LENGTH = 12;
+    public static final int GCM_TAG_LENGTH = 16;
+    public static byte[] key1 = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'};
+
+    /** Instance of the ConfigManager component */
     ConfigManager configManager;
     
     /** Object for printing the secure socket server configuration properties */
@@ -69,7 +87,7 @@ public class ClientEngine extends GenericThreadedComponent
      * This method is called upon initialize of the ClientEngine component and handles any configuration that needs to be
      * done in the client before it connects to the Chat Application Server.
      * 
-     * @see IComponent interface.
+     * //@see IComponent interface.
      */
     public void initialize() throws ComponentInitException
     {
@@ -140,15 +158,32 @@ public class ClientEngine extends GenericThreadedComponent
      * 
      * @param msg The message to be sent
      */
-    public void sendMessage( ChatMessage msg )
-    {
-        try 
-        {
+    public void sendMessage( ChatMessage msg ){
+        byte[] IV = generateIV();
+        System.out.println("IV: " + IV);
 
-            socketWriter.writeObject(msg);
+        try
+        {
+            byte[] cipherText = encryptMsg(msg.getMessage(), IV);
+
+            System.out.println("cipher: " + Base64.getEncoder().encodeToString(cipherText));
+            //String IVstring = new String(IV, "ISO-8859-1");
+            //String IVstring = IV.toString();
+            //String cipherTextString = cipherText.toString();
+            //String IVstring = Base64.getEncoder().encodeToString(cipherText);
+            //String IVandCipher = IVstring.concat(Base64.getEncoder().encodeToString(cipherText));
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+            outputStream.write( IV );
+            outputStream.write( cipherText );
+
+            byte IvAndCipherByte[] = outputStream.toByteArray( );
+
+            String IVandCipher = Base64.getEncoder().encodeToString(IvAndCipherByte);
+            ChatMessage encryptedMessage = new ChatMessage(msg.getType(), IVandCipher);
+            socketWriter.writeObject(encryptedMessage);
 
         }
-        catch( IOException e ) 
+        catch( IOException e )
         {
             System.out.println("Aloha");
             display( "Exception writing to server: " + e );
@@ -156,7 +191,8 @@ public class ClientEngine extends GenericThreadedComponent
             e.printStackTrace();
         }
     }
-    
+
+
     /**
      * Method holding the main logic of the Client Engine. It basically waits for inputs from the user to be sent to the Server.
      */
@@ -240,5 +276,25 @@ public class ClientEngine extends GenericThreadedComponent
         
         /** Invoke our parent's method to stop the thread running the secure socket server... */
         super.shutdown();
+    }
+
+    public byte[] encryptMsg(String msg, byte[] IV) throws Exception{
+        byte[] plainText = msg.getBytes();
+
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        SecretKeySpec keySpec = new SecretKeySpec(key1, "AES");
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV);
+
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParameterSpec);
+        byte[] cipherText = cipher.doFinal(plainText);
+        return cipherText;
+    }
+
+    public byte[] generateIV(){
+        // Generate random IV
+        byte[] IV = new byte[GCM_IV_LENGTH];
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(IV);
+        return IV;
     }
 }

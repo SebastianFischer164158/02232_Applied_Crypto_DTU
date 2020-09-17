@@ -13,9 +13,23 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
+import javax.crypto.*;
 import javax.net.ssl.SSLSocket;
 import java.net.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Vector;
+
+import java.security.SecureRandom;
+import java.util.Base64;
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.bind.DatatypeConverter;
 
 /**
  *
@@ -23,7 +37,14 @@ import java.util.Vector;
  */
 public class SocketConnectionHandler implements Runnable 
 {
-     /** Did we receive a signal to shut down */
+
+    public static byte[] key1 = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'};
+
+    public static final int AES_KEY_SIZE = 256;
+    public static final int GCM_IV_LENGTH = 12;
+    public static final int GCM_TAG_LENGTH = 16;
+    /** Did we receive a signal to shut down */
     protected boolean mustShutdown;
     
     /** Flag for indicating whether we are handling a socket or not */
@@ -319,14 +340,40 @@ public class SocketConnectionHandler implements Runnable
             {  
                 /** Wait until there is something in the stream to be read... */
                 cm = ( ChatMessage )socketReader.readObject();
-                
+
                 String message = cm.getMessage();
-                
+
+
                 // Switch on the type of message receive
                 switch(cm.getType()) 
                 {
                 case ChatMessage.MESSAGE:
-                        SocketServerEngine.getInstance().broadcast(userName + ": " + message);
+
+                        byte[] IV = message.substring(0,28).getBytes();
+                        //String IV2 = message.substring(0,GCM_IV_LENGTH-1);
+                        //System.out.println(IV2.getBytes());
+                        System.out.println("message: " + message);
+                        String msg = message.substring(28);
+                        System.out.println("encrypted: " + msg);
+                        System.out.println("IV: " + IV);
+                    //System.out.println("IV2: " + IV2);
+                    try {
+                        message = decrypt(msg, IV);
+                        System.out.println("decrypted: " + message);
+                    } catch (NoSuchPaddingException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                    } catch (InvalidAlgorithmParameterException e) {
+                        e.printStackTrace();
+                    } catch (InvalidKeyException e) {
+                        e.printStackTrace();
+                    } catch (BadPaddingException e) {
+                        e.printStackTrace();
+                    } catch (IllegalBlockSizeException e) {
+                        e.printStackTrace();
+                    }
+                    SocketServerEngine.getInstance().broadcast(userName + ": " + message);
                         break;
                 case ChatMessage.LOGOUT:
                         SocketServerGUI.getInstance().appendEvent(userName + " disconnected with a LOGOUT message.\n");
@@ -371,7 +418,7 @@ public class SocketConnectionHandler implements Runnable
                 
                 /** Change the socket status... */
                 isSocketOpen = false;
-            }            
+            }
         }
     }
     
@@ -448,5 +495,27 @@ public class SocketConnectionHandler implements Runnable
             /** Notify the ConnectionHandler thread in case it is in an idle state waiting... */
             notify();
         }
+    }
+
+    public static String decrypt(String cipherText, byte[] IV) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        //Charset charset = StandardCharsets.UTF_8;
+        byte[] cipherText2 = DatatypeConverter.parseBase64Binary(cipherText);
+        byte[] IV2 = Arrays.copyOfRange(cipherText2, 0, GCM_IV_LENGTH);
+        byte[] ct = Arrays.copyOfRange(cipherText2, GCM_IV_LENGTH, cipherText2.length);
+
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        //System.out.println("IV: " + new String(IV));
+        //System.out.println("Cipher: " + cipherText);
+        SecretKeySpec keySpec = new SecretKeySpec(key1, "AES");
+
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV2);
+
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec);
+        byte[] decryptedText = cipher.doFinal(ct);
+        System.out.println("print6");
+        return new String(decryptedText);
+
+
+
     }
 }

@@ -63,6 +63,10 @@ public abstract class GenericThreadedComponent implements IComponent, Runnable
      */
     public void run()
     {
-        componentMain();
+        try {
+            componentMain();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }  
 }

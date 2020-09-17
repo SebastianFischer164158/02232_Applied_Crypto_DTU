@@ -280,8 +280,12 @@ public class ClientSocketGUI extends JFrame implements IComponent, ActionListene
          /** If it is the logout operation... */
          if ( o == logout )
          {
-             client.sendMessage( new ChatMessage(ChatMessage.LOGOUT, "") );
-             
+             try {
+                 client.sendMessage( new ChatMessage(ChatMessage.LOGOUT, "") );
+             } catch (Exception ex) {
+                 ex.printStackTrace();
+             }
+
              /** Disable the logout and other button */
              logout.setEnabled( false );
              whoIsIn.setEnabled( false );
@@ -295,7 +299,11 @@ public class ClientSocketGUI extends JFrame implements IComponent, ActionListene
          /** if it is the WHOISIN button... */
          if ( o == whoIsIn )
          {
-             client.sendMessage(new ChatMessage(ChatMessage.WHOISIN, ""));				
+             try {
+                 client.sendMessage(new ChatMessage(ChatMessage.WHOISIN, ""));
+             } catch (Exception ex) {
+                 ex.printStackTrace();
+             }
              return;
          }
          /** If this is for a private chat... */
