@@ -25,7 +25,11 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.WindowConstants;
 
+import java.lang.Math;
+
 import java.net.*;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,7 +49,19 @@ public class P2PClient extends JFrame implements ActionListener
     private final JTextArea ta;
     protected boolean keepGoing;
     JButton send, start;
-    
+
+    // Diffie Hellman properties
+    private Boolean diffieExchange = false;
+
+    private Boolean secretSend = false;
+    private Boolean peerSecretReceived = false;
+    private int calcedSenderValue;
+
+    private int diffieSecret, agreedSecret;
+    private int p = 17;
+    private int g = 4;
+
+
     P2PClient(){
         super("P2P Client Chat");
         host=ConfigManager.getInstance().getValue( "Server.Address" );
@@ -121,6 +137,16 @@ public class P2PClient extends JFrame implements ActionListener
                 display( "Cannot give the same port number as the Chat Application Server - Please give the port number of the peer client to communicate!\n" );
                 return;
             }
+
+            while(!diffieExchange){ // When this is done, send messages.
+                if (!secretSend){
+                    diffieSecret = 3;//ThreadLocalRandom.current().nextInt(0, 30 + 1);
+                    calcedSenderValue = (int)Math.pow(g, diffieSecret) % p;
+                    this.send(String.valueOf(calcedSenderValue));
+                    secretSend = true;
+                }
+            }
+
             this.send(tf.getText());
         }
         if(o == start){
@@ -160,6 +186,7 @@ public class P2PClient extends JFrame implements ActionListener
         try {
             sOutput.writeObject(new ChatMessage(str.length(), str));
             display("You: " + str);
+            display("------------------------------------------------------");
             sOutput.close();
             socket.close();
         } catch (IOException ex) {
@@ -201,13 +228,45 @@ public class P2PClient extends JFrame implements ActionListener
                             catch (IOException eIO) {
                                     display("Exception creating new Input/output Streams: " + eIO);
                             }
-
                             try {
-                                String msg = ((ChatMessage) sInput.readObject()).getMessage();
-                                System.out.println("Msg:"+msg);
-                                display(socket.getInetAddress()+": " + socket.getPort() + ": " + msg);
-                                sInput.close();
-                                socket.close();
+                                if (!peerSecretReceived){
+                                    String msg = ((ChatMessage) sInput.readObject()).getMessage();
+
+                                    System.out.println("Msg:"+msg);
+
+                                    if (!secretSend){
+                                        diffieSecret = 6;//ThreadLocalRandom.current().nextInt(0, 30 + 1);
+                                        calcedSenderValue = (int)Math.pow(g, diffieSecret) % p;
+                                        send(String.valueOf(calcedSenderValue));
+                                        secretSend = true;
+                                    }
+
+                                    agreedSecret = (int)Math.pow(Integer.parseInt(msg), diffieSecret) % p;
+
+                                    display("p: " + p);
+                                    display("g: " + g);
+                                    display("Sender calculated Value: " + calcedSenderValue);
+                                    display("My choosen Secret: " + diffieSecret);
+                                    display("Agreed Secret: " + agreedSecret);
+                                    display(socket.getInetAddress()+": " + socket.getPort() + ": " + msg);
+                                    display("------------------------------------------------------");
+
+                                    sInput.close();
+                                    socket.close();
+                                    diffieExchange = true;
+                                    peerSecretReceived = true;
+                                } else {
+                                    String msg = ((ChatMessage) sInput.readObject()).getMessage();
+                                    display("p: " + p);
+                                    display("g: " + g);
+                                    display("Sender calculated Value: " + calcedSenderValue);
+                                    display("My choosen Secret: " + diffieSecret);
+                                    display("Agreed Secret: " + agreedSecret);
+                                    display(socket.getInetAddress()+": " + socket.getPort() + ": " + msg);
+                                    display("------------------------------------------------------");
+                                    sInput.close();
+                                    socket.close();
+                                }
                             } catch (IOException ex) {
                                 display("Exception creating new Input/output Streams: " + ex);
                             } catch (ClassNotFoundException ex) {
@@ -216,11 +275,11 @@ public class P2PClient extends JFrame implements ActionListener
 
                         }
 		}
-		// something went bad
-		catch (IOException e) {
-//            String msg = sdf.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
-//			display(msg);
-		}
-	}		
+            // something went bad
+            catch (IOException e) {
+    //            String msg = sdf.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
+    //			display(msg);
+            }
+        }
     }
 }
