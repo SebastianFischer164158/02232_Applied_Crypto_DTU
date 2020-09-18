@@ -25,14 +25,9 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.WindowConstants;
 
-import java.lang.Math;
-
 import java.math.BigInteger;
 import java.net.*;
 import java.security.SecureRandom;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,9 +56,11 @@ public class P2PClient extends JFrame implements ActionListener
     private BigInteger calcedSenderValue;
 
     private BigInteger diffieSecret, agreedSecret;
-    private BigInteger p = new BigInteger("23");//BigInteger.probablePrime(1024, new SecureRandom());
-    private BigInteger g = new BigInteger("5");//BigInteger.probablePrime(1024, new SecureRandom());
+    private BigInteger p = new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7feb7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff22203199dd14801c7", 16);//BigInteger.probablePrime(1024, new SecureRandom());
+    private BigInteger g = new BigInteger("f7e1a085d69b3ddecbbcab5c36b857b97994afbbfa3aea82f9574c0b3d0782675159578ebad4594fe67107108180b449167123e84c281613b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2bb3a675916ea37f0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06928b665e807b552564014c3bfecf492a", 16);//BigInteger.probablePrime(1024, new SecureRandom());
 
+    private Boolean delayedMessageExist = false;
+    private String delayedMessage;
 
     P2PClient(){
         super("P2P Client Chat");
@@ -137,7 +134,7 @@ public class P2PClient extends JFrame implements ActionListener
     }
     
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent e){
         Object o = e.getSource();
         if(o == send){
             if ( tfPort.getText().equals( ConfigManager.getInstance().getValue( "Server.PortNumber" ) ) )
@@ -146,16 +143,18 @@ public class P2PClient extends JFrame implements ActionListener
                 return;
             }
 
-            while(!diffieExchange){ // When this is done, send messages.
+            if(!diffieExchange){
                 if (!secretSend){
-                    diffieSecret = new BigInteger("4");//GenerateBigInteger(2048);//ThreadLocalRandom.current().nextInt(0, 30 + 1);
+                    diffieSecret = GenerateBigInteger(2048);
                     calcedSenderValue = g.modPow(diffieSecret, p);
                     this.send(String.valueOf(calcedSenderValue));
                     secretSend = true;
                 }
+                delayedMessageExist = true;
+                delayedMessage = tf.getText();
+            } else{
+                this.send(tf.getText());
             }
-
-            this.send(tf.getText());
         }
         if(o == start){
             new ListenFromClient().start();
@@ -246,7 +245,7 @@ public class P2PClient extends JFrame implements ActionListener
                                     System.out.println("Msg:"+msg);
 
                                     if (!secretSend){
-                                        diffieSecret = new BigInteger("3");//GenerateBigInteger(2048);
+                                        diffieSecret = GenerateBigInteger(2048);
                                         calcedSenderValue = g.modPow(diffieSecret, p);
                                         send(String.valueOf(calcedSenderValue));
                                         secretSend = true;
@@ -262,10 +261,17 @@ public class P2PClient extends JFrame implements ActionListener
                                     System.out.println("Agreed Secret: " + agreedSecret);
                                     System.out.println("------------------------------------------------------");
 
-                                    sInput.close();
-                                    socket.close();
                                     diffieExchange = true;
                                     peerSecretReceived = true;
+
+                                    if (delayedMessageExist){
+                                        send(delayedMessage);
+                                        delayedMessageExist = false;
+                                    }
+
+                                    sInput.close();
+                                    socket.close();
+
                                 } else {
                                     String msg = ((ChatMessage) sInput.readObject()).getMessage();
                                     System.out.println("p: " + p);
