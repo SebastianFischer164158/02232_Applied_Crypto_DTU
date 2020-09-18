@@ -27,8 +27,11 @@ import javax.swing.WindowConstants;
 
 import java.lang.Math;
 
+import java.math.BigInteger;
 import java.net.*;
+import java.security.SecureRandom;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,11 +58,11 @@ public class P2PClient extends JFrame implements ActionListener
 
     private Boolean secretSend = false;
     private Boolean peerSecretReceived = false;
-    private int calcedSenderValue;
+    private BigInteger calcedSenderValue;
 
-    private int diffieSecret, agreedSecret;
-    private int p = 17;
-    private int g = 4;
+    private BigInteger diffieSecret, agreedSecret;
+    private BigInteger p = new BigInteger("23");//BigInteger.probablePrime(1024, new SecureRandom());
+    private BigInteger g = new BigInteger("5");//BigInteger.probablePrime(1024, new SecureRandom());
 
 
     P2PClient(){
@@ -127,6 +130,11 @@ public class P2PClient extends JFrame implements ActionListener
         setVisible(true);
         tf.requestFocus();
     }
+
+    private BigInteger GenerateBigInteger(int bitSize)
+    {
+        return new BigInteger(bitSize, new SecureRandom());
+    }
     
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -140,8 +148,8 @@ public class P2PClient extends JFrame implements ActionListener
 
             while(!diffieExchange){ // When this is done, send messages.
                 if (!secretSend){
-                    diffieSecret = 3;//ThreadLocalRandom.current().nextInt(0, 30 + 1);
-                    calcedSenderValue = (int)Math.pow(g, diffieSecret) % p;
+                    diffieSecret = new BigInteger("4");//GenerateBigInteger(2048);//ThreadLocalRandom.current().nextInt(0, 30 + 1);
+                    calcedSenderValue = g.modPow(diffieSecret, p);
                     this.send(String.valueOf(calcedSenderValue));
                     secretSend = true;
                 }
@@ -238,13 +246,14 @@ public class P2PClient extends JFrame implements ActionListener
                                     System.out.println("Msg:"+msg);
 
                                     if (!secretSend){
-                                        diffieSecret = 6;//ThreadLocalRandom.current().nextInt(0, 30 + 1);
-                                        calcedSenderValue = (int)Math.pow(g, diffieSecret) % p;
+                                        diffieSecret = new BigInteger("3");//GenerateBigInteger(2048);
+                                        calcedSenderValue = g.modPow(diffieSecret, p);
                                         send(String.valueOf(calcedSenderValue));
                                         secretSend = true;
                                     }
 
-                                    agreedSecret = (int)Math.pow(Integer.parseInt(msg), diffieSecret) % p;
+                                    BigInteger receivedPeerKey = new BigInteger(msg);
+                                    agreedSecret = receivedPeerKey.modPow(diffieSecret, p);
 
                                     System.out.println("p: " + p);
                                     System.out.println("g: " + g);
