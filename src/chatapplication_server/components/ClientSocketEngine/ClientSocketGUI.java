@@ -37,7 +37,7 @@ import javax.swing.SwingConstants;
  *
  * @author atgianne
  */
-public class ClientSocketGUI extends JFrame implements IComponent, ActionListener, WindowListener 
+public class ClientSocketGUI extends JFrame implements IComponent, ActionListener, WindowListener
 {
      /** Instance of the ConfigManager component */
     ConfigManager configManager;

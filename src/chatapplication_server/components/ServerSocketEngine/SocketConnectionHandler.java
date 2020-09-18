@@ -345,12 +345,40 @@ public class SocketConnectionHandler implements Runnable
                 switch(cm.getType()) 
                 {
                 case ChatMessage.MESSAGE:
+
+
+
                         System.out.println("SERVER RECEIVED A MESSAGE!");
                         System.out.println("SERVER RECEIVED A MESSAGE! ENCRYPTED: "+ message);
-                        String dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.key);
+
+                        String dec_chatMsg = "";
+                        System.out.println("GOT MESSAGE FROM " + userName);
+
+                        switch(userName){
+                            case "sebastian":
+                                dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.keySebastian);
+
+                                break;
+                            case "magnus":
+                                dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.keyMagnus);
+
+                                break;
+                            case "frederik":
+                                dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.keyFrederik);
+
+                                break;
+                            case "mathias":
+                                dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.keyMathias);
+                                break;
+
+                            default:
+                                System.out.println("Error: Key for user does not exist!");
+
+
+                        }
                         System.out.println("SERVER RECEIVED A MESSAGE! DECRYPTED: "+ dec_chatMsg);
 
-                        SocketServerEngine.getInstance().broadcast(userName + ": " + message);
+                        SocketServerEngine.getInstance().broadcast(userName + ": " + dec_chatMsg);
                         break;
                 case ChatMessage.LOGOUT:
                         SocketServerGUI.getInstance().appendEvent(userName + " disconnected with a LOGOUT message.\n");
@@ -406,8 +434,9 @@ public class SocketConnectionHandler implements Runnable
     *
     * msg The string to be written to the client output stream
     */
-   public boolean writeMsg( String msg ) 
-   {
+   public boolean writeMsg( String msg ) throws Exception {
+
+
            // if Client is still connected send the message to it
            if( !isSocketOpen ) 
            {
@@ -422,7 +451,29 @@ public class SocketConnectionHandler implements Runnable
            // write the message to the stream
            try 
            {
-               socketWriter.writeObject(msg);
+               String ciphertext = "";
+
+               switch(userName){
+                   case "sebastian":
+                       ciphertext = cryptoManager.encrypt(msg, cryptoManager.keySebastian);
+
+                       break;
+                   case "magnus":
+                       ciphertext = cryptoManager.encrypt(msg, cryptoManager.keyMagnus);
+
+                       break;
+                   case "frederik":
+                       ciphertext = cryptoManager.encrypt(msg, cryptoManager.keyFrederik);
+
+                       break;
+                   case "mathias":
+                       ciphertext = cryptoManager.encrypt(msg, cryptoManager.keyMathias);
+                       break;
+
+                   default:
+                       System.out.println("Error: Key for user does not exist!");
+               }
+               socketWriter.writeObject(ciphertext);
            }
            // if an error occurs, do not abort just inform the user
            catch( IOException e ) 

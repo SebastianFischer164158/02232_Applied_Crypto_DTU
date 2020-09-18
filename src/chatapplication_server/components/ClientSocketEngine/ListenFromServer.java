@@ -8,6 +8,8 @@ package chatapplication_server.components.ClientSocketEngine;
 import chatapplication_server.ComponentManager;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import chatapplication_server.components.ConfigManager;
+import crypto.cryptoManager;
 
 /**
  *
@@ -24,9 +26,34 @@ public class ListenFromServer extends Thread
                 {
                     try
                     {
-                        System.out.println("THE CLIENT (ME) RECEIVED A MESSAGE!");
 
                         String msg = (String) sInput.readObject();
+                        String userName = ConfigManager.getInstance().getValue("Client.Username");
+                        System.out.println("THE  USER  CLIENT (ME) RECEIVED A MESSAGE!" + userName);
+
+                        switch(userName){
+                            case "sebastian":
+                                msg = cryptoManager.decrypt(msg, cryptoManager.keySebastian);
+                                System.out.println(" I DECRYPTED: " + msg);
+
+                                break;
+                            case "magnus":
+                                msg = cryptoManager.decrypt(msg, cryptoManager.keyMagnus);
+
+                                break;
+                            case "frederik":
+                                msg = cryptoManager.decrypt(msg, cryptoManager.keyFrederik);
+
+                                break;
+                            case "mathias":
+                                msg = cryptoManager.decrypt(msg, cryptoManager.keyMathias);
+                                break;
+
+                            default:
+                                System.out.println("Error: Key for user does not exist!");
+
+                        }
+
                     
                         if(msg.contains( "#" ))
                         {
@@ -34,7 +61,6 @@ public class ListenFromServer extends Thread
                         }
                         else
                         {
-                            System.out.println("THE CLIENT (ME) RECEIVED A REAL CHAT MESSAGE!");
                             ClientSocketGUI.getInstance().append(msg + "\n");
                         }
                     }
@@ -47,6 +73,8 @@ public class ListenFromServer extends Thread
                     {
                         ClientSocketGUI.getInstance().append( "Server has closed the connection: " + cfe.getMessage() );
                         ComponentManager.getInstance().fatalException(cfe);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
         }
