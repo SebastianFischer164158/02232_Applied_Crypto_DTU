@@ -13,9 +13,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class cryptoManager {
     public static final int GCM_TAG_LENGTH = 16;
     private static final int GCM_IV_LENGTH = 12;
-    public static byte[] key_o = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+    public static byte[] key_S = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
             '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'};
-    public final static SecretKeySpec key = new SecretKeySpec(key_o, "AES");
+    public final static SecretKeySpec keySebastian = new SecretKeySpec(key_S, "AES");
+
+    public static byte[] key_M = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'};
+    public final static SecretKeySpec keyMagnus = new SecretKeySpec(key_M, "AES");
+
+    public static byte[] key_MB = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '2'};
+    public final static SecretKeySpec keyMathias = new SecretKeySpec(key_MB, "AES");
+
+    public static byte[] key_F = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '3'};
+    public final static SecretKeySpec keyFrederik = new SecretKeySpec(key_F, "AES");
+
+
     //aes 256 key (32 bytes = 256 bits
 
 

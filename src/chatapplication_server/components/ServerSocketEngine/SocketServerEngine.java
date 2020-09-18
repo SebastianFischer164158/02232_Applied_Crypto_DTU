@@ -115,7 +115,7 @@ public class SocketServerEngine extends GenericThreadedComponent
      *
      * Also, it starts the socket server.
      * 
-     * @see IComponent interface.
+     * @see //IComponent interface.
      */
     public void initialize() throws ComponentInitException
     {
@@ -321,8 +321,7 @@ public class SocketServerEngine extends GenericThreadedComponent
         }
     }
     
-    public void writeMsgSpecificClient( int PortNo, String msg )
-    {
+    public void writeMsgSpecificClient( int PortNo, String msg ) throws Exception {
         /** Vector that will temporarily hold a clone of the occupance pool... */
         Vector occupance = new Vector();
 
@@ -356,14 +355,14 @@ public class SocketServerEngine extends GenericThreadedComponent
      * 
      * @param message The message to be broadcasted
      */
-    public void broadcast( String message )
-    {
+    public void broadcast( String message ) throws Exception {
         System.out.println("I BROADCASTED A MESSAGE WUHU!");
         SimpleDateFormat sdf = new SimpleDateFormat( "HH:mm:ss" );
         
         // add HH:mm:ss and \n to the message
         String time = sdf.format(new Date());
         String messageLf = time + " " + message + "\n";
+
         
         /** Print the message on the Server GUI */
         SocketServerGUI.getInstance().appendRoom( messageLf );
