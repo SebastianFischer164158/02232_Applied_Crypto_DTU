@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -27,9 +28,13 @@ import javax.swing.WindowConstants;
 
 import java.math.BigInteger;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import crypto.cryptoManager;
 
 /**
  *
@@ -61,6 +66,8 @@ public class P2PClient extends JFrame implements ActionListener
 
     private Boolean delayedMessageExist = false;
     private String delayedMessage;
+
+    private SecretKeySpec sharedSecret;
 
     P2PClient(){
         super("P2P Client Chat");
@@ -132,6 +139,17 @@ public class P2PClient extends JFrame implements ActionListener
     {
         return new BigInteger(bitSize, new SecureRandom());
     }
+
+    private SecretKeySpec PerformSha256(BigInteger agreedScret) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+
+        byte[] encodedhash = digest.digest(
+                agreedScret.toString().getBytes(StandardCharsets.UTF_8));
+
+        System.out.println("After Sha256 encode: "+ encodedhash);
+        SecretKeySpec shareSecret = new SecretKeySpec(encodedhash, "AES");
+        return shareSecret;
+    }
     
     @Override
     public void actionPerformed(ActionEvent e){
@@ -153,7 +171,11 @@ public class P2PClient extends JFrame implements ActionListener
                 delayedMessageExist = true;
                 delayedMessage = tf.getText();
             } else{
-                this.send(tf.getText());
+                try {
+                    this.send(cryptoManager.encrypt(tf.getText(), sharedSecret));
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
             }
         }
         if(o == start){
@@ -191,10 +213,16 @@ public class P2PClient extends JFrame implements ActionListener
             }
 
         try {
-            sOutput.writeObject(new ChatMessage(str.length(), str));
-            if (diffieExchange)
-                display("You: " + str);
+            if (diffieExchange){
+                try {
+                    sOutput.writeObject(new ChatMessage(str.length(), str));
+                    display("You: " + cryptoManager.decrypt(str,sharedSecret));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
 
+            sOutput.writeObject(new ChatMessage(str.length(), str));
             System.out.println("You: " + str);
             System.out.println("------------------------------------------------------");
             sOutput.close();
@@ -212,7 +240,7 @@ public class P2PClient extends JFrame implements ActionListener
             }
 
             @Override
-            public void run() {
+            public void run(){
                 try 
 		{ 
 			// the socket used by the server
@@ -254,6 +282,14 @@ public class P2PClient extends JFrame implements ActionListener
                                     BigInteger receivedPeerKey = new BigInteger(msg);
                                     agreedSecret = receivedPeerKey.modPow(diffieSecret, p);
 
+                                    try { // TODO: Not sure if this could be removed some how
+                                        sharedSecret = PerformSha256(agreedSecret);
+                                    } catch (NoSuchAlgorithmException e) {
+                                        e.printStackTrace(); // TODO: Change this.
+                                    }
+
+                                    System.out.println("SharedSecret: "+sharedSecret.hashCode());
+
                                     System.out.println("p: " + p);
                                     System.out.println("g: " + g);
                                     System.out.println("Sender calculated Value: " + calcedSenderValue);
@@ -265,7 +301,11 @@ public class P2PClient extends JFrame implements ActionListener
                                     peerSecretReceived = true;
 
                                     if (delayedMessageExist){
-                                        send(delayedMessage);
+                                        try {
+                                            send(cryptoManager.encrypt(delayedMessage,sharedSecret));
+                                        } catch (Exception e) {
+                                            e.printStackTrace(); //TODO: Change this to a more relevant exception.
+                                        }
                                         delayedMessageExist = false;
                                     }
 
@@ -279,7 +319,11 @@ public class P2PClient extends JFrame implements ActionListener
                                     System.out.println("Sender calculated Value: " + calcedSenderValue);
                                     System.out.println("My choosen Secret: " + diffieSecret);
                                     System.out.println("Agreed Secret: " + agreedSecret);
-                                    display(socket.getInetAddress()+": " + socket.getPort() + ": " + msg);
+                                    try {
+                                        display(socket.getInetAddress()+": " + socket.getPort() + ": " + cryptoManager.decrypt(msg, sharedSecret));
+                                    } catch (Exception e) {
+                                        e.printStackTrace(); //TODO: Change this to a more relevant exception.
+                                    }
                                     System.out.println("------------------------------------------------------");
                                     sInput.close();
                                     socket.close();
