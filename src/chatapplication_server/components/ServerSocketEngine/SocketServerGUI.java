@@ -1,11 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package chatapplication_server.components.ServerSocketEngine;
 
-import chatapplication_server.ChatApplicationServerEngine;
 import chatapplication_server.ComponentManager;
 import chatapplication_server.components.ConfigManager;
 import chatapplication_server.components.base.IComponent;

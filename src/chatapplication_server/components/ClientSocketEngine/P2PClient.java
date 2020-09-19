@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package chatapplication_server.components.ClientSocketEngine;
 
 import SocketActionMessages.ChatMessage;
@@ -25,13 +20,13 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.WindowConstants;
-
 import java.math.BigInteger;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import crypto.cryptoManager;
@@ -55,14 +50,18 @@ public class P2PClient extends JFrame implements ActionListener
 
     // Diffie Hellman properties
     private Boolean diffieExchange = false;
-
     private Boolean secretSend = false;
     private Boolean peerSecretReceived = false;
     private BigInteger calcedSenderValue;
-
     private BigInteger diffieSecret, agreedSecret;
-    private BigInteger p = new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7feb7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff22203199dd14801c7", 16);//BigInteger.probablePrime(1024, new SecureRandom());
-    private BigInteger g = new BigInteger("f7e1a085d69b3ddecbbcab5c36b857b97994afbbfa3aea82f9574c0b3d0782675159578ebad4594fe67107108180b449167123e84c281613b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2bb3a675916ea37f0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06928b665e807b552564014c3bfecf492a", 16);//BigInteger.probablePrime(1024, new SecureRandom());
+    //2048 bits p & g as defined in Java 8 docs
+    private final BigInteger p = new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80b65126" +
+            "69455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7fe" +
+            "b7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff22203199dd14801c7", 16);
+
+    private final BigInteger g = new BigInteger("f7e1a085d69b3ddecbbcab5c36b857b97994afbbfa3aea82f9574c0b3d0782" +
+            "675159578ebad4594fe67107108180b449167123e84c281613b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2bb3a675916e" +
+            "a37f0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06928b665e807b552564014c3bfecf492a", 16);
 
     private Boolean delayedMessageExist = false;
     private String delayedMessage;
@@ -143,12 +142,10 @@ public class P2PClient extends JFrame implements ActionListener
     private SecretKeySpec PerformSha256(BigInteger agreedScret) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-        byte[] encodedhash = digest.digest(
-                agreedScret.toString().getBytes(StandardCharsets.UTF_8));
+        byte[] encodedhash = digest.digest(agreedScret.toString().getBytes(StandardCharsets.UTF_8));
 
-        System.out.println("After Sha256 encode: "+ encodedhash);
-        SecretKeySpec shareSecret = new SecretKeySpec(encodedhash, "AES");
-        return shareSecret;
+        System.out.println("After Sha256 encode: "+ Arrays.toString(encodedhash));
+        return new SecretKeySpec(encodedhash, "AES");
     }
     
     @Override
@@ -197,7 +194,7 @@ public class P2PClient extends JFrame implements ActionListener
             } 
             // if it failed not much I can so
             catch(Exception ec) {
-                    display("Error connectiong to server:" + ec.getMessage() + "\n");
+                    display("Error connecting to server:" + ec.getMessage() + "\n");
                     return false;
             }
 
@@ -214,12 +211,8 @@ public class P2PClient extends JFrame implements ActionListener
 
         try {
             if (diffieExchange){
-                try {
-                    sOutput.writeObject(new ChatMessage(str.length(), str));
-                    display("You: " + cryptoManager.decrypt(str,sharedSecret));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                sOutput.writeObject(new ChatMessage(str.length(), str));
+                display("You: " + cryptoManager.decrypt(str,sharedSecret));
             }
 
             sOutput.writeObject(new ChatMessage(str.length(), str));
@@ -229,9 +222,11 @@ public class P2PClient extends JFrame implements ActionListener
             socket.close();
         } catch (IOException ex) {
             display("Exception creating new Input/output Streams: " + ex);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-         return true;
+        return true;
     }
     
     private class ListenFromClient extends Thread{
@@ -267,9 +262,8 @@ public class P2PClient extends JFrame implements ActionListener
                                     display("Exception creating new Input/output Streams: " + eIO);
                             }
                             try {
+                                String msg = ((ChatMessage) sInput.readObject()).getMessage();
                                 if (!peerSecretReceived){
-                                    String msg = ((ChatMessage) sInput.readObject()).getMessage();
-
                                     System.out.println("Msg:"+msg);
 
                                     if (!secretSend){
@@ -282,14 +276,10 @@ public class P2PClient extends JFrame implements ActionListener
                                     BigInteger receivedPeerKey = new BigInteger(msg);
                                     agreedSecret = receivedPeerKey.modPow(diffieSecret, p);
 
-                                    try { // TODO: Not sure if this could be removed some how
-                                        sharedSecret = PerformSha256(agreedSecret);
-                                    } catch (NoSuchAlgorithmException e) {
-                                        e.printStackTrace(); // TODO: Change this.
-                                    }
+
+                                    sharedSecret = PerformSha256(agreedSecret);
 
                                     System.out.println("SharedSecret: "+sharedSecret.hashCode());
-
                                     System.out.println("p: " + p);
                                     System.out.println("g: " + g);
                                     System.out.println("Sender calculated Value: " + calcedSenderValue);
@@ -301,36 +291,26 @@ public class P2PClient extends JFrame implements ActionListener
                                     peerSecretReceived = true;
 
                                     if (delayedMessageExist){
-                                        try {
-                                            send(cryptoManager.encrypt(delayedMessage,sharedSecret));
-                                        } catch (Exception e) {
-                                            e.printStackTrace(); //TODO: Change this to a more relevant exception.
-                                        }
+                                        send(cryptoManager.encrypt(delayedMessage,sharedSecret));
                                         delayedMessageExist = false;
                                     }
 
-                                    sInput.close();
-                                    socket.close();
-
                                 } else {
-                                    String msg = ((ChatMessage) sInput.readObject()).getMessage();
                                     System.out.println("p: " + p);
                                     System.out.println("g: " + g);
                                     System.out.println("Sender calculated Value: " + calcedSenderValue);
                                     System.out.println("My choosen Secret: " + diffieSecret);
                                     System.out.println("Agreed Secret: " + agreedSecret);
-                                    try {
-                                        display(socket.getInetAddress()+": " + socket.getPort() + ": " + cryptoManager.decrypt(msg, sharedSecret));
-                                    } catch (Exception e) {
-                                        e.printStackTrace(); //TODO: Change this to a more relevant exception.
-                                    }
+
+                                    display(socket.getInetAddress()+": " + socket.getPort() + ": " + cryptoManager.decrypt(msg, sharedSecret));
+
                                     System.out.println("------------------------------------------------------");
-                                    sInput.close();
-                                    socket.close();
                                 }
+                                sInput.close();
+                                socket.close();
                             } catch (IOException ex) {
                                 display("Exception creating new Input/output Streams: " + ex);
-                            } catch (ClassNotFoundException ex) {
+                            } catch (Exception ex) {
                                 Logger.getLogger(P2PClient.class.getName()).log(Level.SEVERE, null, ex);
                             }
 

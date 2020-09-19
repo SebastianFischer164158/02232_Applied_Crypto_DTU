@@ -1,32 +1,16 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package chatapplication_server.components.ServerSocketEngine;
 
 import SocketActionMessages.ChatMessage;
 import chatapplication_server.components.ConfigManager;
 import chatapplication_server.statistics.ServerStatistics;
 import crypto.cryptoManager;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
-import javax.crypto.*;
-import javax.net.ssl.SSLSocket;
 import java.net.*;
-import java.util.Base64;
 import java.util.Vector;
-
-import java.security.SecureRandom;
-import java.util.Base64;
-import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 
 /**
  *
@@ -34,13 +18,6 @@ import javax.xml.bind.DatatypeConverter;
  */
 public class SocketConnectionHandler implements Runnable 
 {
-
-    public static byte[] key1 = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'};
-
-    public static final int AES_KEY_SIZE = 256;
-    public static final int GCM_IV_LENGTH = 12;
-    public static final int GCM_TAG_LENGTH = 16;
     /** Did we receive a signal to shut down */
     protected boolean mustShutdown;
     
@@ -345,14 +322,8 @@ public class SocketConnectionHandler implements Runnable
                 switch(cm.getType()) 
                 {
                 case ChatMessage.MESSAGE:
-
-
-
-                        System.out.println("SERVER RECEIVED A MESSAGE!");
-                        System.out.println("SERVER RECEIVED A MESSAGE! ENCRYPTED: "+ message);
-
+                        System.out.println("SERVER RECEIVED A MESSAGE FROM "+ userName+ "! -> ENCRYPTED: "+ message);
                         String dec_chatMsg = "";
-                        System.out.println("GOT MESSAGE FROM " + userName);
 
                         switch(userName){
                             case "sebastian":
@@ -374,9 +345,8 @@ public class SocketConnectionHandler implements Runnable
                             default:
                                 System.out.println("Error: Key for user does not exist!");
 
-
                         }
-                        System.out.println("SERVER RECEIVED A MESSAGE! DECRYPTED: "+ dec_chatMsg);
+                        System.out.println("SERVER DECRYPTED THE MESSAGE FROM "+ userName+ "! -> DECRYPTED: "+ dec_chatMsg);
 
                         SocketServerEngine.getInstance().broadcast(userName + ": " + dec_chatMsg);
                         break;
