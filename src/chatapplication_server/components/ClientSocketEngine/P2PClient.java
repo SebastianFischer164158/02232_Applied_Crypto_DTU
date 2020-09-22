@@ -48,13 +48,17 @@ public class P2PClient extends JFrame implements ActionListener
     protected boolean keepGoing;
     JButton send, start;
 
-    // Diffie Hellman properties
+    /** Setup Diffie Hellman Properties flags*/
     private Boolean diffieExchange = false;
     private Boolean secretSend = false;
     private Boolean peerSecretReceived = false;
     private BigInteger calcedSenderValue;
     private BigInteger diffieSecret, agreedSecret;
-    //2048 bits p & g as defined in Java 8 docs
+    private Boolean delayedMessageExist = false;
+    private String delayedMessage;
+    private SecretKeySpec sharedSecret;
+
+    /** Define 2048 bits p & g as defined in Java 8 docs (ref.) */
     private final BigInteger p = new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80b65126" +
             "69455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7fe" +
             "b7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff22203199dd14801c7", 16);
@@ -63,10 +67,7 @@ public class P2PClient extends JFrame implements ActionListener
             "675159578ebad4594fe67107108180b449167123e84c281613b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2bb3a675916e" +
             "a37f0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06928b665e807b552564014c3bfecf492a", 16);
 
-    private Boolean delayedMessageExist = false;
-    private String delayedMessage;
 
-    private SecretKeySpec sharedSecret;
 
     P2PClient(){
         super("P2P Client Chat");
@@ -133,12 +134,13 @@ public class P2PClient extends JFrame implements ActionListener
         setVisible(true);
         tf.requestFocus();
     }
-
+    /** Function to generate a random big integer from a defined bitSize*/
     private BigInteger GenerateBigInteger(int bitSize)
     {
         return new BigInteger(bitSize, new SecureRandom());
     }
 
+    /** Function to perform Sha256 and output a secret key spec AES*/
     private SecretKeySpec PerformSha256(BigInteger agreedScret) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
@@ -157,9 +159,10 @@ public class P2PClient extends JFrame implements ActionListener
                 display( "Cannot give the same port number as the Chat Application Server - Please give the port number of the peer client to communicate!\n" );
                 return;
             }
-
+            /** Check if Diffie Exchange has been done*/
             if(!diffieExchange){
                 if (!secretSend){
+                    /** Generate random secret integer*/
                     diffieSecret = GenerateBigInteger(2048);
                     calcedSenderValue = g.modPow(diffieSecret, p);
                     this.send(String.valueOf(calcedSenderValue));
@@ -169,6 +172,7 @@ public class P2PClient extends JFrame implements ActionListener
                 delayedMessage = tf.getText();
             } else{
                 try {
+                    /** When the Diffie Exchange is done, encrypt the message */
                     this.send(cryptoManager.encrypt(tf.getText(), sharedSecret));
                 } catch (Exception exception) {
                     exception.printStackTrace();
@@ -210,6 +214,7 @@ public class P2PClient extends JFrame implements ActionListener
             }
 
         try {
+            /** If the diffie exchange is done it's a regular encrypt -> send*/
             if (diffieExchange){
                 sOutput.writeObject(new ChatMessage(str.length(), str));
                 display("You: " + cryptoManager.decrypt(str,sharedSecret));
@@ -263,6 +268,8 @@ public class P2PClient extends JFrame implements ActionListener
                             }
                             try {
                                 String msg = ((ChatMessage) sInput.readObject()).getMessage();
+
+                                /** Execute Diffie Hellman*/
                                 if (!peerSecretReceived){
                                     System.out.println("Msg:"+msg);
 
@@ -272,6 +279,8 @@ public class P2PClient extends JFrame implements ActionListener
                                         send(String.valueOf(calcedSenderValue));
                                         secretSend = true;
                                     }
+
+                                    /** Create Diffie Hellman Integer from the msg*/
 
                                     BigInteger receivedPeerKey = new BigInteger(msg);
                                     agreedSecret = receivedPeerKey.modPow(diffieSecret, p);
