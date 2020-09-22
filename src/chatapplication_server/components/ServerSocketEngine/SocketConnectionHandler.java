@@ -440,6 +440,7 @@ public class SocketConnectionHandler implements Runnable
                        ciphertext = cryptoManager.encrypt(msg, cryptoManager.keyMathias);
                        break;
 
+
                    default:
                        System.out.println("Error: Key for user does not exist!");
                }
