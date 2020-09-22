@@ -171,8 +171,6 @@ public class ChatApplicationServerEngine
         
         if ( mode.equals( "Server" ) )
         {
-            System.out.println("HELLO SEBASTIAN FISCHER");
-            System.out.println("dank stuff 123");
             /** Boot up the ChatApplicationServer system... */
             ChatApplicationServerEngine.getInstance().startUpCAServer();
         }
