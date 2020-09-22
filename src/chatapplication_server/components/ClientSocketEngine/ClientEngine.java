@@ -147,6 +147,9 @@ public class ClientEngine extends GenericThreadedComponent
             String userName = configManager.getValue( "Client.Username" );
             String ciphertext = "";
 
+
+            /** Encrypt the messages based on the client the message is being sent to
+             */
             switch(userName){
                 case "sebastian":
                     ciphertext = cryptoManager.encrypt(msg.getMessage(), cryptoManager.keySebastian);

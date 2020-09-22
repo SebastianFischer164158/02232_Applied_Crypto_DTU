@@ -30,24 +30,31 @@ public class ListenFromServer extends Thread
                         String msg = (String) sInput.readObject();
                         String userName = ConfigManager.getInstance().getValue("Client.Username");
                         System.out.println("THE  USER  CLIENT (ME) RECEIVED A MESSAGE!" + userName);
+                        System.out.println("Received Encrypted text: " + msg);
+
+                        /** Decrypt the incoming messages from the clients */
 
                         switch(userName){
                             case "sebastian":
                                 msg = cryptoManager.decrypt(msg, cryptoManager.keySebastian);
                                 System.out.println(" I DECRYPTED: " + msg);
-
                                 break;
+
                             case "magnus":
                                 msg = cryptoManager.decrypt(msg, cryptoManager.keyMagnus);
-
+                                System.out.println(" I DECRYPTED: " + msg);
                                 break;
+
                             case "frederik":
                                 msg = cryptoManager.decrypt(msg, cryptoManager.keyFrederik);
-
+                                System.out.println(" I DECRYPTED: " + msg);
                                 break;
+
                             case "mathias":
                                 msg = cryptoManager.decrypt(msg, cryptoManager.keyMathias);
+                                System.out.println(" I DECRYPTED: " + msg);
                                 break;
+
 
                             default:
                                 System.out.println("Error: Key for user does not exist!");
