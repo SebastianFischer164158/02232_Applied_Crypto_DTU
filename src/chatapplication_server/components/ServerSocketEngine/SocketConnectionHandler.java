@@ -104,8 +104,7 @@ public class SocketConnectionHandler implements Runnable
      * 
      * @param s A reference to the newly established socket connection that this SocketConnectionHandler will handle
      */
-    synchronized void setSocketConnection( Socket s )
-    {
+    synchronized void setSocketConnection( Socket s ) throws IOException {
         /** Set the isSocketOpen flag to true... */
         isSocketOpen = true;
         
@@ -118,6 +117,7 @@ public class SocketConnectionHandler implements Runnable
         /** If the socket's stream writer/reader are set up correctly...then notify the thread to start working */
         if ( setSocketStreamReaderWriter() )
         {
+            System.out.println("SOCKET SET UP - DONE - NOTIFYING LOCAL THREAD");
             /** Notify the local thread to wake up */
             notify();
         }
@@ -137,8 +137,12 @@ public class SocketConnectionHandler implements Runnable
             socketWriter = new ObjectOutputStream( handleConnection.getOutputStream() );
             socketReader = new ObjectInputStream( handleConnection.getInputStream() );
             
+            String dank = "InitialCertExchangeFlag";
+            socketWriter.writeObject(dank);
+            System.out.println("Sent InitialCertExchangeFlag");
             /** Read the username */
             userName = ( String )socketReader.readObject();
+            System.out.println("Received username: " + userName);
             SocketServerGUI.getInstance().appendEvent( userName + " just connected at port number: " + handleConnection.getPort() + "\n" );
 
             return true;
