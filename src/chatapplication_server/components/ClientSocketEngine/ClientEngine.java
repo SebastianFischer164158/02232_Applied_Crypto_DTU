@@ -16,6 +16,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import java.net.*;
+import java.nio.charset.StandardCharsets;
+
 import crypto.cryptoManager;
 /**
  *
@@ -101,6 +103,14 @@ public class ClientEngine extends GenericThreadedComponent
             socketWriter = new ObjectOutputStream( socket.getOutputStream() );
             socketReader = new ObjectInputStream( socket.getInputStream() );
             
+            String msg;
+            try {
+                msg = (String) socketReader.readObject();
+                if(msg.equals("InitialCertExchangeFlag")){System.out.println("Initial Exchange Received");}
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
             /** Start the ListeFromServer thread... */
             new ListenFromServer().start();
         }
@@ -113,6 +123,7 @@ public class ClientEngine extends GenericThreadedComponent
         /** Send our username to the server... */
         try
         {
+            System.out.println("Sending username to server");
             socketWriter.writeObject( configManager.getValue( "Client.Username" ) );
         }
         catch ( IOException ioe )
