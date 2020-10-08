@@ -1,6 +1,12 @@
 package crypto;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
 import javax.crypto.Cipher;
@@ -72,4 +78,30 @@ public class cryptoManager {
         /** Return the now decrypted plaintext */
         return new String(decrypted, UTF_8);
     }
+
+
+    /** Modified version of  Athanasios Giannetsos scripts provided in LAB#2*/
+    /** Method assumes that "Certificate" is present in root project dir! - OR ELSE a full path is provided*/
+    public static PublicKey ExtractPubKeyFromCert(String Certificate) throws FileNotFoundException, CertificateException {
+        FileInputStream fr = new FileInputStream(Certificate); //"Bob.cer"
+        CertificateFactory cf = CertificateFactory.getInstance("X509");
+        X509Certificate c = (X509Certificate) cf.generateCertificate(fr);
+        System.out.println("\tCertificate for: " + c.getSubjectDN());
+        System.out.println("\tCertificate issued by: " + c.getIssuerDN());
+        System.out.println("\tThe certificate is valid from " + c.getNotBefore() + " to "
+                + c.getNotAfter());
+        System.out.println("\tCertificate SN# " + c.getSerialNumber());
+        System.out.println("\tGenerated with " + c.getSigAlgName());
+
+        System.out.println(c.getSigAlgName());//SHA1withRSA
+        PublicKey PubKey=c.getPublicKey();
+        System.out.println("\tkey " + PubKey.toString());
+        System.out.println(PubKey.getAlgorithm());
+
+        return PubKey;
+    }
+
+
+
+
 }
