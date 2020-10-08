@@ -1,0 +1,2 @@
+java -jar 02232_Applied_Crypto_DTU.jar Mode=Server
+java -jar 02232_Applied_Crypto_DTU.jar Mode=Client
