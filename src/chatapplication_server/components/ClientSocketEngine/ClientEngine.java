@@ -17,8 +17,14 @@ import java.io.ObjectOutputStream;
 
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 
 import crypto.cryptoManager;
+
+import static crypto.cryptoManager.ExtractCertFromJKS;
+
 /**
  *
  * @author atgianne
@@ -80,6 +86,7 @@ public class ClientEngine extends GenericThreadedComponent
                 
         /** For printing the configuration properties of the secure socket server */
         lotusStat = new ServerStatistics();
+        String UserName = configManager.getValue( "Client.Username" );
         
         /** Try and connect to the server... */
         try
@@ -102,14 +109,46 @@ public class ClientEngine extends GenericThreadedComponent
             /** Set up the stream reader/writer for this socket connection... */
             socketWriter = new ObjectOutputStream( socket.getOutputStream() );
             socketReader = new ObjectInputStream( socket.getInputStream() );
-            
-            String msg;
+//
+//            String msg;
+//            try {
+//                msg = (String) socketReader.readObject();
+//                if(msg.equals("InitialCertExchangeFlag")){System.out.println("Initial Exchange Received");}
+//            } catch (IOException | ClassNotFoundException e) {
+//                e.printStackTrace();
+//            }
+
+            /** First the client receives the certificate from the server*/
+
+            java.security.cert.Certificate ServerCert;
             try {
-                msg = (String) socketReader.readObject();
-                if(msg.equals("InitialCertExchangeFlag")){System.out.println("Initial Exchange Received");}
+                ServerCert = (java.security.cert.Certificate) socketReader.readObject();
+                System.out.println("<<<<<<<<<<<<<<<<Server Cert Received>>>>>>>>>>>>>>>>>>");
+                System.out.println(ServerCert);
+                System.out.println("<<<<<<<<<<<<<<<<END Cert Received END>>>>>>>>>>>>>>>>>>");
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
+
+            /** we then extract the client's respective certificate from the JKS and send it off to the server*/
+
+            java.security.cert.Certificate ClientCert = null;
+            try {
+                if(UserName.equals("alice")) {
+                    ClientCert = ExtractCertFromJKS(cryptoManager.ServerKeyStore, cryptoManager.ServerKeyStorePass,
+                            cryptoManager.Serveralias);
+                }
+                if(UserName.equals("bob")) {
+                    ClientCert = ExtractCertFromJKS(cryptoManager.ServerKeyStore, cryptoManager.ServerKeyStorePass,
+                            cryptoManager.Serveralias);
+                }
+                socketWriter.writeObject(ClientCert);
+                System.out.println("Sent Server Cert");
+            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+
+
 
             /** Start the ListeFromServer thread... */
             new ListenFromServer().start();
@@ -124,7 +163,7 @@ public class ClientEngine extends GenericThreadedComponent
         try
         {
             System.out.println("Sending username to server");
-            socketWriter.writeObject( configManager.getValue( "Client.Username" ) );
+            socketWriter.writeObject(UserName);
         }
         catch ( IOException ioe )
         {
