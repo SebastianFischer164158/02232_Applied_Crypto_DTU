@@ -2,8 +2,12 @@ package crypto;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -25,6 +29,21 @@ public class cryptoManager {
     /** Use for GCM... */
     public static final int GCM_TAG_LENGTH = 16;
     private static final int GCM_IV_LENGTH = 12;
+    // if executing jar file from /out then move ServerKeyStore.jks to /out folder, and remove absolute path to rel.
+    public static String ServerKeyStore = "D:\\Projects\\02232_Applied_Crypto_DTU\\ServerKeyStore.jks";
+    public static String ServerKeyStorePass = "password";
+    public static String Serveralias = "server";
+
+    public static String AliceKeyStore = "D:\\Projects\\02232_Applied_Crypto_DTU\\AliceKeyStore.jks";
+    public static String AliceKeyStorePass = "password";
+    public static String Alicealias = "alice";
+
+    public static String BobKeyStore = "D:\\Projects\\02232_Applied_Crypto_DTU\\BobKeyStore.jks";
+    public static String BobkeyStorePass = "password";
+    public static String Bobalias = "bob";
+
+
+
 
     /** Hardcoded keys as allowed in the assignment... (256 bits) */
     public static byte[] key_S = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
@@ -100,6 +119,23 @@ public class cryptoManager {
 
         return PubKey;
     }
+
+    public static Certificate ExtractCertFromJKS(String keyStore, String KeyStorePass, String alias)
+            throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
+        // load information into a keystore
+        java.security.KeyStore ks = java.security.KeyStore.getInstance( "JKS" );
+        java.io.FileInputStream ksfis = new java.io.FileInputStream( keyStore );
+        java.io.BufferedInputStream ksbufin = new java.io.BufferedInputStream( ksfis );
+        ks.load( ksbufin, KeyStorePass.toCharArray() );
+        return ks.getCertificate(alias);
+    }
+    //Example of call:
+
+//    String keyStore = "ServerKeyStore.jks"; // keystore file should in the program folder of the application
+//    String keyStorePass = "password"; // password of keystore
+//
+//    java.security.cert.Certificate cert = ExtractCertFromJKS(keyStore, keyStorePass, "server");
+//        System.out.println(cert);
 
 
 
