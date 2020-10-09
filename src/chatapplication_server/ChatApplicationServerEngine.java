@@ -6,6 +6,7 @@
 package chatapplication_server;
 
 import java.io.IOException;
+import java.security.Security;
 import java.util.LinkedList;
 
 /**
@@ -163,7 +164,8 @@ public class ChatApplicationServerEngine
      * @param args The command line arguments
      */
     public static void main( String[] args )
-    { 
+    {
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         String mode = getCommandLineArgPasswd( args );
         
         System.out.println( args[0] );
