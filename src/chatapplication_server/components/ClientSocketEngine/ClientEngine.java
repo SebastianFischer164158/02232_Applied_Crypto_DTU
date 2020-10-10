@@ -17,13 +17,20 @@ import java.io.ObjectOutputStream;
 
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.cert.CertificateException;
 
+import com.sun.security.ntlm.Client;
+import com.sun.security.ntlm.Server;
 import crypto.cryptoManager;
 
-import static crypto.cryptoManager.ExtractCertFromJKS;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+
+import static crypto.cryptoManager.*;
 
 /**
  *
@@ -79,8 +86,7 @@ public class ClientEngine extends GenericThreadedComponent
      * 
      * @see //IComponent interface.
      */
-    public void initialize() throws ComponentInitException
-    {
+    public void initialize() throws Exception {
         /** Get the running instance of the Configuration Manager component */
         configManager = ConfigManager.getInstance();
                 
@@ -176,8 +182,10 @@ public class ClientEngine extends GenericThreadedComponent
             display( "Exception during login: " + ioe );
             shutdown();
             ComponentManager.getInstance().fatalException(ioe);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException | InvalidKeyException e) {
+            e.printStackTrace();
         }
-        
+
         super.initialize();
     }
     
