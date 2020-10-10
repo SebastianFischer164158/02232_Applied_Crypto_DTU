@@ -98,24 +98,22 @@ public class cryptoManager {
 
 
     /** Modified version of  Athanasios Giannetsos scripts provided in LAB#2*/
-    /** Method assumes that "Certificate" is present in root project dir! - OR ELSE a full path is provided*/
-    public static PublicKey ExtractPubKeyFromCert(String Certificate) throws FileNotFoundException, CertificateException {
-        FileInputStream fr = new FileInputStream(Certificate); //"Bob.cer"
-        CertificateFactory cf = CertificateFactory.getInstance("X509");
-        X509Certificate c = (X509Certificate) cf.generateCertificate(fr);
-        System.out.println("\tCertificate for: " + c.getSubjectDN());
-        System.out.println("\tCertificate issued by: " + c.getIssuerDN());
-        System.out.println("\tThe certificate is valid from " + c.getNotBefore() + " to "
-                + c.getNotAfter());
-        System.out.println("\tCertificate SN# " + c.getSerialNumber());
-        System.out.println("\tGenerated with " + c.getSigAlgName());
+    /** Method assumes that "Certificate" is present in root project dir! - OR ELSE a full path is provided
+     * @param Certificate*/
+    public static PublicKey ExtractPubKeyFromCert(Certificate Certificate) {
+        X509Certificate c = (X509Certificate) Certificate;
+        return c.getPublicKey();
+    }
+    public static PrivateKey ExtractPrivKeyFromJKS(String keyStore, String KeyStorePass, String alias, String keyPass)
+            throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        // load information into a keystore
+        java.security.KeyStore ks = java.security.KeyStore.getInstance( "JKS" );
+        java.io.FileInputStream ksfis = new java.io.FileInputStream( keyStore );
+        java.io.BufferedInputStream ksbufin = new java.io.BufferedInputStream( ksfis );
+        ks.load( ksbufin, KeyStorePass.toCharArray() );
+        java.security.cert.Certificate cert = ks.getCertificate(alias);
+        return (PrivateKey) ks.getKey( alias, keyPass.toCharArray() );
 
-        System.out.println(c.getSigAlgName());//SHA1withRSA
-        PublicKey PubKey=c.getPublicKey();
-        System.out.println("\tkey " + PubKey.toString());
-        System.out.println(PubKey.getAlgorithm());
-
-        return PubKey;
     }
 
     public static Certificate ExtractCertFromJKS(String keyStore, String KeyStorePass, String alias)
