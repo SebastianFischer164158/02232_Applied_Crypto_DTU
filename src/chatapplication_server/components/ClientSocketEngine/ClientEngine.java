@@ -179,37 +179,11 @@ public class ClientEngine extends GenericThreadedComponent
 
         try
         {
-            String userName = configManager.getValue( "Client.Username" );
-            String ciphertext = "";
+            /** Encrypt the message to be sent to the server*/
 
-
-            /** Encrypt the messages based on the client the message is being sent to
-             */
-            switch(userName){
-                case "sebastian":
-                    ciphertext = cryptoManager.encrypt(msg.getMessage(), cryptoManager.keySebastian);
-
-                    break;
-                case "magnus":
-                    ciphertext = cryptoManager.encrypt(msg.getMessage(), cryptoManager.keyMagnus);
-
-                    break;
-                case "frederik":
-                    ciphertext = cryptoManager.encrypt(msg.getMessage(), cryptoManager.keyFrederik);
-
-                    break;
-                case "mathias":
-                    ciphertext = cryptoManager.encrypt(msg.getMessage(), cryptoManager.keyMathias);
-                    break;
-
-                default:
-                    System.out.println("Error: Key for user does not exist!");
-            }
-
-
+            String ciphertext = cryptoManager.encrypt(msg.getMessage(), AES_secret_client_key);
             ChatMessage result = new ChatMessage(msg.getType(), ciphertext);
             System.out.println("ENCRYPTED RESULT: " + result.getMessage());
-
             socketWriter.writeObject(result);
 
         }
