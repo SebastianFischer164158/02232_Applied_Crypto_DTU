@@ -147,8 +147,10 @@ public class ClientEngine extends GenericThreadedComponent
         /** Send our username to the server... */
         try
         {
-            System.out.println("Sending username to server");
-            socketWriter.writeObject(UserName);
+            String UserNameEncrypted = encrypt(UserName, AES_secret_client_key);
+            //byte[] UserNameEncrypted = cryptoManager.encrypt_RSA(ServerPubKey_ClientSide, UserName.getBytes());
+            System.out.println("Sending encrypted username to server"+ UserNameEncrypted);
+            socketWriter.writeObject(UserNameEncrypted);
         }
         catch ( IOException ioe )
         {
