@@ -155,6 +155,20 @@ public class cryptoManager {
         return Cert;
     }
 
+    public static byte[] encrypt_RSA(PublicKey key, byte[] plaintext) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    {
+        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        return cipher.doFinal(plaintext);
+    }
+
+    public static byte[] decrypt_RSA(PrivateKey key, byte[] ciphertext) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    {
+        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        return cipher.doFinal(ciphertext);
+    }
+
 
 
 }
