@@ -109,46 +109,31 @@ public class ClientEngine extends GenericThreadedComponent
             /** Set up the stream reader/writer for this socket connection... */
             socketWriter = new ObjectOutputStream( socket.getOutputStream() );
             socketReader = new ObjectInputStream( socket.getInputStream() );
-//
-//            String msg;
-//            try {
-//                msg = (String) socketReader.readObject();
-//                if(msg.equals("InitialCertExchangeFlag")){System.out.println("Initial Exchange Received");}
-//            } catch (IOException | ClassNotFoundException e) {
-//                e.printStackTrace();
-//            }
 
             /** First the client receives the certificate from the server*/
 
-            java.security.cert.Certificate ServerCert;
-            try {
-                ServerCert = (java.security.cert.Certificate) socketReader.readObject();
-                System.out.println("<<<<<<<<<<<<<<<<Server Cert Received>>>>>>>>>>>>>>>>>>");
-                System.out.println(ServerCert);
-                System.out.println("<<<<<<<<<<<<<<<<END Cert Received END>>>>>>>>>>>>>>>>>>");
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
+            java.security.cert.Certificate ServerCert = cryptoManager.ReceiveCert(socketReader);
+            System.out.println("<<<<<<<<<<<<<<<<Server Cert Received>>>>>>>>>>>>>>>>>>");
+            System.out.println(ServerCert);
+            System.out.println("<<<<<<<<<<<<<<<<END Server Cert Received END>>>>>>>>>>>>>>>>>>");
 
             /** we then extract the client's respective certificate from the JKS and send it off to the server*/
 
             java.security.cert.Certificate ClientCert = null;
             try {
                 if(UserName.equals("alice")) {
-                    ClientCert = ExtractCertFromJKS(cryptoManager.ServerKeyStore, cryptoManager.ServerKeyStorePass,
-                            cryptoManager.Serveralias);
+                    ClientCert = ExtractCertFromJKS(cryptoManager.AliceKeyStore, cryptoManager.AliceKeyStorePass,
+                            cryptoManager.Alicealias);
                 }
                 if(UserName.equals("bob")) {
-                    ClientCert = ExtractCertFromJKS(cryptoManager.ServerKeyStore, cryptoManager.ServerKeyStorePass,
-                            cryptoManager.Serveralias);
+                    ClientCert = ExtractCertFromJKS(cryptoManager.BobKeyStore, cryptoManager.BobKeyStorePass,
+                            cryptoManager.Bobalias);
                 }
-                socketWriter.writeObject(ClientCert);
-                System.out.println("Sent Server Cert");
+                cryptoManager.SendCert(ClientCert, socketWriter);
+                System.out.println("Sent " + UserName + " Cert TO SERVER");
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
-
-
 
             /** Start the ListeFromServer thread... */
             new ListenFromServer().start();
