@@ -146,34 +146,22 @@ public class SocketConnectionHandler implements Runnable
             // the cert for the server itself has the alias "server"
             // see cryptomanager
 
-            /** First the server receives the certificate from the client*/
-            // TODO: REFACTOR TO SendCertificateToClient() in CryptoManger or similar
+            /** First the server sends the certificate to the client*/
             java.security.cert.Certificate ServerCert;
             try {
                 ServerCert = ExtractCertFromJKS(cryptoManager.ServerKeyStore, cryptoManager.ServerKeyStorePass,
                         cryptoManager.Serveralias);
-                socketWriter.writeObject(ServerCert);
-                System.out.println("Sent Server Cert");
+                System.out.println("Sent Server Cert to Client!");
+                cryptoManager.SendCert(ServerCert, socketWriter);
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
-
             /** Then the server receives the certificate from the client*/
+            java.security.cert.Certificate ClientCert = cryptoManager.ReceiveCert(socketReader);
+            System.out.println("<<<<<<<<<<<<<<<<Client Cert Received>>>>>>>>>>>>>>>>>>");
+            System.out.println(ClientCert);
+            System.out.println("<<<<<<<<<<<<<<<<END Cert Received END>>>>>>>>>>>>>>>>>>");
 
-            java.security.cert.Certificate ClientCert;
-            try {
-                ClientCert = (java.security.cert.Certificate) socketReader.readObject();
-                System.out.println("<<<<<<<<<<<<<<<<Client Cert Received>>>>>>>>>>>>>>>>>>");
-                System.out.println(ClientCert);
-                System.out.println("<<<<<<<<<<<<<<<<END Cert Received END>>>>>>>>>>>>>>>>>>");
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-
-//
-//            String dank = "InitialCertExchangeFlag";
-//            socketWriter.writeObject(dank);
-//            System.out.println("Sent InitialCertExchangeFlag");
             /** Read the username */
             userName = ( String )socketReader.readObject();
             System.out.println("Received username: " + userName);
