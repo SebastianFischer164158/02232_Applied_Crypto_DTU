@@ -1,8 +1,6 @@
 package crypto;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -39,7 +37,7 @@ public class cryptoManager {
     public static String Alicealias = "alice";
 
     public static String BobKeyStore = "D:\\Projects\\02232_Applied_Crypto_DTU\\BobKeyStore.jks";
-    public static String BobkeyStorePass = "password";
+    public static String BobKeyStorePass = "password";
     public static String Bobalias = "bob";
 
 
@@ -137,6 +135,25 @@ public class cryptoManager {
 //    java.security.cert.Certificate cert = ExtractCertFromJKS(keyStore, keyStorePass, "server");
 //        System.out.println(cert);
 
+
+    public static void SendCert(java.security.cert.Certificate Cert, ObjectOutputStream socketWriter){
+        try {
+            socketWriter.writeObject(Cert);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static java.security.cert.Certificate ReceiveCert(ObjectInputStream socketReader) {
+        java.security.cert.Certificate Cert = null;
+        try {
+            Cert = (java.security.cert.Certificate) socketReader.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return Cert;
+    }
 
 
 
