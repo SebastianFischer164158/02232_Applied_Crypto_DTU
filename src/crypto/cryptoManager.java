@@ -1,18 +1,17 @@
 package crypto;
 
+import org.bouncycastle.jcajce.provider.asymmetric.X509;
+
 import java.io.*;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
+import java.util.HashMap;
+import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -27,6 +26,7 @@ public class cryptoManager {
     /** Use for GCM... */
     public static final int GCM_TAG_LENGTH = 16;
     private static final int GCM_IV_LENGTH = 12;
+
     // if executing jar file from /out then move ServerKeyStore.jks to /out folder, and remove absolute path to rel.
     public static String ServerKeyStore = "D:\\Projects\\02232_Applied_Crypto_DTU\\ServerKeyStore.jks";
     public static String ServerKeyStorePass = "password";
@@ -40,25 +40,17 @@ public class cryptoManager {
     public static String BobKeyStorePass = "password";
     public static String Bobalias = "bob";
 
+    public static PublicKey ServerPubKey_ServSide; //gets set by server side
+    public static PublicKey ServerPubKey_ClientSide; //gets set by a client.
+    public static PublicKey ClientPubKey; //gets set by a client.
 
+    public static HashMap<String,PublicKey> Clients_PublicKeys_ServerSide = new HashMap<>();
+    // wanted to use a single hashamp with Username as key, and a tuple with (pubkey, secretkey)
+    // but java makes it incredibly complicated to do such a simple thing.
+    public static HashMap<String,SecretKey> Clients_SecretKeys_ServerSide = new HashMap<>();
 
-
-    /** Hardcoded keys as allowed in the assignment... (256 bits) */
-    public static byte[] key_S = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'};
-    public final static SecretKeySpec keySebastian = new SecretKeySpec(key_S, "AES");
-
-    public static byte[] key_M = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'};
-    public final static SecretKeySpec keyMagnus = new SecretKeySpec(key_M, "AES");
-
-    public static byte[] key_MB = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '2'};
-    public final static SecretKeySpec keyMathias = new SecretKeySpec(key_MB, "AES");
-
-    public static byte[] key_F = new byte[]{'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '3'};
-    public final static SecretKeySpec keyFrederik = new SecretKeySpec(key_F, "AES");
+    public static byte [] AES_s_client_key;
+    public static SecretKeySpec AES_secret_client_key = null;
 
     /** Encrypt function takes a String plaintext and a SecretKey masterkey.. */
     public static String encrypt(String plaintext, SecretKey masterkey) throws Exception {
