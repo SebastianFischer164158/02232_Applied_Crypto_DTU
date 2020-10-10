@@ -341,39 +341,14 @@ public class SocketConnectionHandler implements Runnable
                 /** Wait until there is something in the stream to be read... */
                 cm = ( ChatMessage )socketReader.readObject();
 
-                String message = cm.getMessage();
-
-
                 // Switch on the type of message receive
-                switch(cm.getType()) 
+                switch(cm.getType())
                 {
                 case ChatMessage.MESSAGE:
+                        String message = cm.getMessage();
                         System.out.println("SERVER RECEIVED A MESSAGE FROM "+ userName+ "! -> ENCRYPTED: "+ message);
-                        String dec_chatMsg = "";
-
-                        switch(userName){
-                            case "sebastian":
-                                dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.keySebastian);
-
-                                break;
-                            case "magnus":
-                                dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.keyMagnus);
-
-                                break;
-                            case "frederik":
-                                dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.keyFrederik);
-
-                                break;
-                            case "mathias":
-                                dec_chatMsg = cryptoManager.decrypt(message, cryptoManager.keyMathias);
-                                break;
-
-                            default:
-                                System.out.println("Error: Key for user does not exist!");
-
-                        }
+                        String dec_chatMsg = cryptoManager.decrypt(message, Clients_SecretKeys_ServerSide.get(userName));
                         System.out.println("SERVER DECRYPTED THE MESSAGE FROM "+ userName+ "! -> DECRYPTED: "+ dec_chatMsg);
-
                         SocketServerEngine.getInstance().broadcast(userName + ": " + dec_chatMsg);
                         break;
                 case ChatMessage.LOGOUT:
