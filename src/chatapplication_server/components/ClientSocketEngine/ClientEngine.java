@@ -116,18 +116,31 @@ public class ClientEngine extends GenericThreadedComponent
             System.out.println("<<<<<<<<<<<<<<<<Server Cert Received>>>>>>>>>>>>>>>>>>");
             System.out.println(ServerCert);
             System.out.println("<<<<<<<<<<<<<<<<END Server Cert Received END>>>>>>>>>>>>>>>>>>");
+            cryptoManager.ServerPubKey_ClientSide = cryptoManager.ExtractPubKeyFromCert(ServerCert);
+            System.out.println("Extracted Server PublicKey : \n" + ServerPubKey_ClientSide);
 
             /** we then extract the client's respective certificate from the JKS and send it off to the server*/
 
             java.security.cert.Certificate ClientCert = null;
+            String ClientKeyStore = null;
+            String ClientKeyStorePass = null;
+            String Clientalias = null;
             try {
                 if(UserName.equals("alice")) {
                     ClientCert = ExtractCertFromJKS(cryptoManager.AliceKeyStore, cryptoManager.AliceKeyStorePass,
                             cryptoManager.Alicealias);
+                    ClientPubKey = ExtractPubKeyFromCert(ClientCert); //this should maybe be done earlier
+                    ClientKeyStore = AliceKeyStore;
+                    ClientKeyStorePass = AliceKeyStorePass;
+                    Clientalias = Alicealias;
                 }
                 if(UserName.equals("bob")) {
                     ClientCert = ExtractCertFromJKS(cryptoManager.BobKeyStore, cryptoManager.BobKeyStorePass,
                             cryptoManager.Bobalias);
+                    ClientPubKey = ExtractPubKeyFromCert(ClientCert); //this should maybe be done earlier
+                    ClientKeyStore = BobKeyStore;
+                    ClientKeyStorePass = BobKeyStorePass;
+                    Clientalias = Bobalias;
                 }
                 cryptoManager.SendCert(ClientCert, socketWriter);
                 System.out.println("Sent " + UserName + " Cert TO SERVER");
@@ -135,15 +148,21 @@ public class ClientEngine extends GenericThreadedComponent
                 e.printStackTrace();
             }
 
+            //Receive the secret AES key (encrypted)
+            byte[] Encrypted_AES_key_from_server = (byte[]) socketReader.readObject();
+            //Decrypt it with the client's private key
+            PrivateKey ClientPrivateKey = ExtractPrivKeyFromJKS(ClientKeyStore, ClientKeyStorePass, Clientalias, ClientKeyStorePass);
+            AES_s_client_key = cryptoManager.decrypt_RSA(ClientPrivateKey, Encrypted_AES_key_from_server);
+            AES_secret_client_key = new SecretKeySpec(AES_s_client_key, "AES");
             /** Start the ListeFromServer thread... */
             new ListenFromServer().start();
         }
-        catch ( IOException ioe )
+        catch (IOException | ClassNotFoundException ioe )
         {
             display( "Exception creating new Input/Output Streams: " + ioe + "\n");
             ComponentManager.getInstance().fatalException(ioe);
         }
-        
+
         /** Send our username to the server... */
         try
         {
