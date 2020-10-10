@@ -447,29 +447,8 @@ public class SocketConnectionHandler implements Runnable
            // write the message to the stream
            try 
            {
-               String ciphertext = "";
                /** Encrypt for the broadcast based on the username*/
-               switch(userName){
-                   case "sebastian":
-                       ciphertext = cryptoManager.encrypt(msg, cryptoManager.keySebastian);
-
-                       break;
-                   case "magnus":
-                       ciphertext = cryptoManager.encrypt(msg, cryptoManager.keyMagnus);
-
-                       break;
-                   case "frederik":
-                       ciphertext = cryptoManager.encrypt(msg, cryptoManager.keyFrederik);
-
-                       break;
-                   case "mathias":
-                       ciphertext = cryptoManager.encrypt(msg, cryptoManager.keyMathias);
-                       break;
-
-
-                   default:
-                       System.out.println("Error: Key for user does not exist!");
-               }
+               String ciphertext = cryptoManager.encrypt(msg, Clients_SecretKeys_ServerSide.get(userName));
                socketWriter.writeObject(ciphertext);
            }
            // if an error occurs, do not abort just inform the user
