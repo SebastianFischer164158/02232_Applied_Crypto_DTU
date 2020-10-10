@@ -151,6 +151,7 @@ public class SocketConnectionHandler implements Runnable
             try {
                 ServerCert = ExtractCertFromJKS(cryptoManager.ServerKeyStore, cryptoManager.ServerKeyStorePass,
                         cryptoManager.Serveralias);
+                ServerPubKey_ServSide = ExtractPubKeyFromCert(ServerCert);
                 System.out.println("Sent Server Cert to Client!");
                 cryptoManager.SendCert(ServerCert, socketWriter);
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
@@ -161,9 +162,31 @@ public class SocketConnectionHandler implements Runnable
             System.out.println("<<<<<<<<<<<<<<<<Client Cert Received>>>>>>>>>>>>>>>>>>");
             System.out.println(ClientCert);
             System.out.println("<<<<<<<<<<<<<<<<END Cert Received END>>>>>>>>>>>>>>>>>>");
+            // Extract the pub key from the cert
+            PublicKey clientPublicKey = ExtractPubKeyFromCert(ClientCert);
+
+            // Generate a random AES key and encrypt it with RSA, and send it off to the Client
+            // Store the generated key in Clients_SecretKeys_ServerSide (Alice, secretKey)
+            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator.init(256);
+            SecretKey AES_KEY = keyGenerator.generateKey();
+            byte[] AES_key_as_bytes = AES_KEY.getEncoded();
+            byte[] encrypted_AES_key = cryptoManager.encrypt_RSA(clientPublicKey, AES_key_as_bytes);
+            // Send the encrypted AES key to the Client
+            socketWriter.writeObject(encrypted_AES_key);
 
             /** Read the username */
-            userName = ( String )socketReader.readObject();
+            //byte[] EncryptedUserName = (byte[]) socketReader.readObject();
+            //byte[] DecryptedUserName = cryptoManager.decrypt_RSA(ServerPrivateKey, EncryptedUserName);
+            //userName = new String(DecryptedUserName, StandardCharsets.UTF_8);
+            String EncryptedUserName = (String) socketReader.readObject();
+            userName = cryptoManager.decrypt(EncryptedUserName, AES_KEY);
+
+            // Store the Client's cert, based on the username
+            Clients_PublicKeys_ServerSide.put(userName, clientPublicKey);
+            // Store the secret key linked to the client's username.
+            Clients_SecretKeys_ServerSide.put(userName, AES_KEY);
+
             System.out.println("Received username: " + userName);
             SocketServerGUI.getInstance().appendEvent( userName + " just connected at port number: " + handleConnection.getPort() + "\n" );
 
