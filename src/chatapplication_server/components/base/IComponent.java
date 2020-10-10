@@ -7,6 +7,15 @@ package chatapplication_server.components.base;
 
 import chatapplication_server.exception.*;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+
 /**
  * This interface is supported by all ChatApplication components that support automatic start-up and 
  * shut down by the Component Manager.
@@ -21,7 +30,7 @@ public interface IComponent
      * Method declaration for initializing the component
      * IMPORTANT This method must not block
      */
-    abstract public void initialize() throws ComponentInitException, PropertyLoadException;
+    abstract public void initialize() throws Exception;
     
     /**
      * Method declaration for signaling the component that it must terminate

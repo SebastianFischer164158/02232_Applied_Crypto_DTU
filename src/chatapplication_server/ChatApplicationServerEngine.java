@@ -51,8 +51,7 @@ public class ChatApplicationServerEngine
      * implemented ChatApplicationServer components.
      *
      */
-    public void startUpCAServer()
-    {
+    public void startUpCAServer() throws Exception {
        System.out.println( "[ChatApplicationServer_Engine]: Booting up..." );
         
         /** Fetch the ComponentManager running instance */
@@ -81,8 +80,7 @@ public class ChatApplicationServerEngine
      * implemented ChatApplicationClient components.
      *
      */
-    public void startUpCAClient()
-    {
+    public void startUpCAClient() throws Exception {
        System.out.println( "[ChatApplicationClient_Engine]: Booting up..." );
         
         /** Fetch the ComponentManager running instance */
@@ -163,8 +161,7 @@ public class ChatApplicationServerEngine
      *
      * @param args The command line arguments
      */
-    public static void main( String[] args )
-    {
+    public static void main( String[] args ) throws Exception {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         String mode = getCommandLineArgPasswd( args );
         

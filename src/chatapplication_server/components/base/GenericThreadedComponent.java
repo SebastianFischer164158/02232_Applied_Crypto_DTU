@@ -7,6 +7,15 @@ package chatapplication_server.components.base;
 
 import chatapplication_server.exception.ComponentInitException;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+
 /**
  * This class serves as the basis for a multithreaded component that does NOT receive any
  * network messages. Classes that extend this class need to implement the componentMain()
@@ -35,8 +44,7 @@ public abstract class GenericThreadedComponent implements IComponent, Runnable
      *
      * @see IComponent
      */
-    public void initialize() throws ComponentInitException
-    {
+    public void initialize() throws Exception {
         mustShutdown = false;
         
         localThread = new Thread( this );

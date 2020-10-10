@@ -64,8 +64,7 @@ public class ComponentManager
      * @param componentNames A list containing the names of the components to be started
      * @retun FALSE on error; TRUE otherwise
      */
-    public boolean startComponentsList( LinkedList componentNames )
-    {
+    public boolean startComponentsList( LinkedList componentNames ) throws Exception {
         String nextComponent;
         
         try
@@ -87,38 +86,18 @@ public class ComponentManager
                 activeComponents.addFirst( com );
             }
         }
-        catch (ComponentInitException c)
+        catch (ComponentInitException | NoSuchMethodException | PropertyLoadException | ClassNotFoundException | IllegalAccessException | InvocationTargetException c)
         {
             fatalException( c );
         }
-        catch ( PropertyLoadException p )
-        {
-            fatalException( p );
-        }
-        catch( ClassNotFoundException e )
-        {
-            fatalException( e );
-        }
-        catch(NoSuchMethodException e)
-        {
-            fatalException( e );
-        }
-        catch(IllegalAccessException e)
-        {
-            fatalException( e );
-        }
-        catch(InvocationTargetException e)
-        {
-            fatalException( e );
-        }
-        
+
         return true;
     }
     
     /** 
      * Start the component corresponding to the given name.
      *
-     * @param componentNames String name of the component to be started
+     * @param //componentNames String name of the component to be started
      * @retun FALSE on error; TRUE otherwise
      */
     public boolean startComponent( String componentName )
@@ -137,31 +116,13 @@ public class ComponentManager
             /** Add to active components list in reverse order */
             activeComponents.addFirst( com );
         }
-        catch( ComponentInitException e )
+        catch( ComponentInitException | PropertyLoadException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e )
         {
             fatalException( e );
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch ( PropertyLoadException e )
-        {
-            fatalException( e );
-        }
-        catch( ClassNotFoundException e )
-        {
-            fatalException( e );
-        }
-        catch(NoSuchMethodException e)
-        {
-            fatalException( e );
-        }
-        catch(IllegalAccessException e)
-        {
-            fatalException( e );
-        }
-        catch(InvocationTargetException e)
-        {
-            fatalException( e );
-        }
-        
+
         return true;
     }
     

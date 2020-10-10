@@ -104,7 +104,7 @@ public class SocketServerEngine extends GenericThreadedComponent
      * 
      * @see //IComponent interface.
      */
-    public void initialize() throws ComponentInitException
+    public void initialize() throws Exception
     {
         /** Get the running instance of the Configuration Manager component */
         configManager = ConfigManager.getInstance();

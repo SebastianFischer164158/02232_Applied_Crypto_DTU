@@ -150,6 +150,8 @@ public class SocketServerGUI extends JFrame implements IComponent, ActionListene
         {
             /** Safely shut down the system */
             ComponentManager.getInstance().fatalException( ie );
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
     
