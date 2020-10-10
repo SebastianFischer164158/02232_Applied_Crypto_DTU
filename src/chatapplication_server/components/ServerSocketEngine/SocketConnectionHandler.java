@@ -4,18 +4,20 @@ import SocketActionMessages.ChatMessage;
 import chatapplication_server.components.ConfigManager;
 import chatapplication_server.statistics.ServerStatistics;
 import crypto.cryptoManager;
+
+import javax.crypto.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
 import java.net.*;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Vector;
 
-import static crypto.cryptoManager.ExtractCertFromJKS;
+import static crypto.cryptoManager.*;
 
 /**
  *
@@ -109,7 +111,7 @@ public class SocketConnectionHandler implements Runnable
      * 
      * @param s A reference to the newly established socket connection that this SocketConnectionHandler will handle
      */
-    synchronized void setSocketConnection( Socket s ) throws IOException {
+    synchronized void setSocketConnection( Socket s ) throws Exception {
         /** Set the isSocketOpen flag to true... */
         isSocketOpen = true;
         
@@ -134,7 +136,7 @@ public class SocketConnectionHandler implements Runnable
      *
      * @return TRUE If the set up was successful; FALSE otherwise
      */
-    public boolean setSocketStreamReaderWriter() {
+    public boolean setSocketStreamReaderWriter() throws Exception {
         try
         {
             /** Set up the stream reader/writer for this socket connection... */
@@ -231,7 +233,7 @@ public class SocketConnectionHandler implements Runnable
 
             return false;
         }
-        catch ( IOException ioe )
+        catch (IOException | CertificateException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException ioe )
         {
             /** Keep track of the exception in the logging stream... */
             SocketServerGUI.getInstance().appendEvent( "[" + handlerName + "]: IOException during stream read/writer init -- " + ioe.getMessage() + " (" + connectionStat.getCurrentDate() + ")\n" );
