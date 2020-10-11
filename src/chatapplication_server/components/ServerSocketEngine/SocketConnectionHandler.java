@@ -4,7 +4,6 @@ import SocketActionMessages.ChatMessage;
 import chatapplication_server.components.ConfigManager;
 import chatapplication_server.statistics.ServerStatistics;
 import crypto.cryptoManager;
-
 import javax.crypto.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,9 +11,10 @@ import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Vector;
 
 import static crypto.cryptoManager.*;
@@ -164,6 +164,12 @@ public class SocketConnectionHandler implements Runnable
             System.out.println("<<<<<<<<<<<<<<<<Client Cert Received>>>>>>>>>>>>>>>>>>");
             System.out.println(ClientCert);
             System.out.println("<<<<<<<<<<<<<<<<END Cert Received END>>>>>>>>>>>>>>>>>>");
+            /** Verify that the certificate was signed by the trusted CA!*/
+            System.out.println("ROOT CA -> -> -> -> " + Base64.getEncoder().encodeToString(RootCAPubKey.getEncoded()));
+            //verify the client cert has been signed by the rootcapubkey
+            // signature does not match atm, try and generate all new certificates once again. and try again.
+            cryptoManager.VerifyCert(ClientCert, RootCAPubKey);
+
             // Extract the pub key from the cert
             PublicKey clientPublicKey = ExtractPubKeyFromCert(ClientCert);
 
