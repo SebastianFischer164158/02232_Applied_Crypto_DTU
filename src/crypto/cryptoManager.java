@@ -43,6 +43,18 @@ public class cryptoManager {
     public static PublicKey ServerPubKey_ServSide; //gets set by server side
     public static PublicKey ServerPubKey_ClientSide; //gets set by a client.
     public static PublicKey ClientPubKey; //gets set by a client.
+    public final static String RootCACert_path = "D:\\Projects\\02232_Applied_Crypto_DTU\\ca_root.cer";
+    public static Certificate RootCACert = null;
+
+    static {
+        try {
+            RootCACert = ExtractCerFromPath(RootCACert_path);
+        } catch (FileNotFoundException | CertificateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public final static PublicKey RootCAPubKey = ExtractPubKeyFromCert(RootCACert);
 
     public static HashMap<String,PublicKey> Clients_PublicKeys_ServerSide = new HashMap<>();
     // wanted to use a single hashamp with Username as key, and a tuple with (pubkey, secretkey)
