@@ -159,6 +159,18 @@ public class cryptoManager {
         return cipher.doFinal(ciphertext);
     }
 
+    public static void VerifyCert(java.security.cert.Certificate cert, PublicKey pubkey) {
+        try{
+            cert.verify(pubkey);
+            System.out.println("Certificate Verified!");
+        } catch (CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
+            System.out.println("Certificate NOT Verified!");
+            e.printStackTrace();
+        }
 
+
+
+
+    }
 
 }
