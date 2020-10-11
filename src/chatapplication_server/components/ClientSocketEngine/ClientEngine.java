@@ -19,6 +19,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.Base64;
 
 import com.sun.security.ntlm.Client;
 import com.sun.security.ntlm.Server;
@@ -124,6 +125,9 @@ public class ClientEngine extends GenericThreadedComponent
             System.out.println("<<<<<<<<<<<<<<<<END Server Cert Received END>>>>>>>>>>>>>>>>>>");
             cryptoManager.ServerPubKey_ClientSide = cryptoManager.ExtractPubKeyFromCert(ServerCert);
             System.out.println("Extracted Server PublicKey : \n" + ServerPubKey_ClientSide);
+            /** Verify that the certificate was signed by the trusted CA!*/
+            System.out.println("ROOT CA -> -> -> -> " + Base64.getEncoder().encodeToString(RootCAPubKey.getEncoded()));
+            cryptoManager.VerifyCert(ServerCert, RootCAPubKey);
 
             /** we then extract the client's respective certificate from the JKS and send it off to the server*/
 
