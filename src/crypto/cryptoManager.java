@@ -129,6 +129,13 @@ public class cryptoManager {
         ks.load( ksbufin, KeyStorePass.toCharArray() );
         return ks.getCertificate(alias);
     }
+
+    public static Certificate ExtractCerFromPath(String path) throws FileNotFoundException, CertificateException {
+        FileInputStream fr = new FileInputStream(path);
+        CertificateFactory cf = CertificateFactory.getInstance("X509");
+        return cf.generateCertificate(fr);
+    }
+
     //Example of call:
 
 //    String keyStore = "ServerKeyStore.jks"; // keystore file should in the program folder of the application
