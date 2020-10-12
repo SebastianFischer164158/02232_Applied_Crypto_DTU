@@ -9,24 +9,16 @@ import SocketActionMessages.ChatMessage;
 import chatapplication_server.ComponentManager;
 import chatapplication_server.components.ConfigManager;
 import chatapplication_server.components.base.GenericThreadedComponent;
-import chatapplication_server.exception.ComponentInitException;
 import chatapplication_server.statistics.ServerStatistics;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.util.Base64;
-
-import com.sun.security.ntlm.Client;
-import com.sun.security.ntlm.Server;
 import crypto.cryptoManager;
-
 import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
@@ -126,7 +118,6 @@ public class ClientEngine extends GenericThreadedComponent
             cryptoManager.ServerPubKey_ClientSide = cryptoManager.ExtractPubKeyFromCert(ServerCert);
             System.out.println("Extracted Server PublicKey : \n" + ServerPubKey_ClientSide);
             /** Verify that the certificate was signed by the trusted CA!*/
-            System.out.println("ROOT CA -> -> -> -> " + Base64.getEncoder().encodeToString(RootCAPubKey.getEncoded()));
             cryptoManager.VerifyCert(ServerCert, RootCAPubKey);
 
             /** we then extract the client's respective certificate from the JKS and send it off to the server*/
@@ -137,14 +128,18 @@ public class ClientEngine extends GenericThreadedComponent
             String Clientalias = null;
             try {
                 if(UserName.equals("alice")) {
+                    /**Extract the certificate from the keystore*/
                     ClientCert = ExtractCertFromJKS(cryptoManager.AliceKeyStore, cryptoManager.AliceKeyStorePass,
                             cryptoManager.Alicealias);
+                    /** Extract the public key from the certificate*/
                     ClientPubKey = ExtractPubKeyFromCert(ClientCert); //this should maybe be done earlier
+                    /**Set the relevant variables*/
                     ClientKeyStore = AliceKeyStore;
                     ClientKeyStorePass = AliceKeyStorePass;
                     Clientalias = Alicealias;
                 }
                 if(UserName.equals("bob")) {
+                    /** Just like above, but just with bob.*/
                     ClientCert = ExtractCertFromJKS(cryptoManager.BobKeyStore, cryptoManager.BobKeyStorePass,
                             cryptoManager.Bobalias);
                     ClientPubKey = ExtractPubKeyFromCert(ClientCert); //this should maybe be done earlier
@@ -158,11 +153,13 @@ public class ClientEngine extends GenericThreadedComponent
                 e.printStackTrace();
             }
 
-            //Receive the secret AES key (encrypted)
+            /** Receive the encrypted symmetric key */
             byte[] Encrypted_AES_key_from_server = (byte[]) socketReader.readObject();
-            //Decrypt it with the client's private key
+            /** Extract Private Key of the Client from JKS */
             PrivateKey ClientPrivateKey = ExtractPrivKeyFromJKS(ClientKeyStore, ClientKeyStorePass, Clientalias, ClientKeyStorePass);
+            /** Decrypt the received symmetric key with public crypto RSA*/
             AES_s_client_key = cryptoManager.decrypt_RSA(ClientPrivateKey, Encrypted_AES_key_from_server);
+            /** set the SecretKeySpec for AES, based on the now decrypted AES key*/
             AES_secret_client_key = new SecretKeySpec(AES_s_client_key, "AES");
             /** Start the ListeFromServer thread... */
             new ListenFromServer().start();
@@ -176,7 +173,9 @@ public class ClientEngine extends GenericThreadedComponent
         /** Send our username to the server... */
         try
         {
+            /**Encrypt the username with the symmetric key in order to stop impersonation attacks*/
             String UserNameEncrypted = encrypt(UserName, AES_secret_client_key);
+            /**Public crypto version*/
             //byte[] UserNameEncrypted = cryptoManager.encrypt_RSA(ServerPubKey_ClientSide, UserName.getBytes());
             System.out.println("Sending encrypted username to server"+ UserNameEncrypted);
             socketWriter.writeObject(UserNameEncrypted);
