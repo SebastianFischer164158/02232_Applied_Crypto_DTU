@@ -1,7 +1,5 @@
 package crypto;
 
-import org.bouncycastle.jcajce.provider.asymmetric.X509;
-
 import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
@@ -18,8 +16,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 /**
- * Cryptomanager class responsible for all AES-GCM operations
- * Defines 4 hardcoded keys for 4 hardcoded client usernames
+ * Cryptomanager class responsible for all AES-GCM operations, Publickey crypto, certificates, etc.
  *
  */
 public class cryptoManager {
@@ -43,7 +40,7 @@ public class cryptoManager {
     public static PublicKey ServerPubKey_ServSide; //gets set by server side
     public static PublicKey ServerPubKey_ClientSide; //gets set by a client.
     public static PublicKey ClientPubKey; //gets set by a client.
-    public final static String RootCACert_path = "D:\\Projects\\02232_Applied_Crypto_DTU\\ca_root.cer";
+    public final static String RootCACert_path = "D:\\Projects\\02232_Applied_Crypto_DTU\\rootca.cer";
     public static Certificate RootCACert = null;
 
     static {
@@ -100,29 +97,25 @@ public class cryptoManager {
         return new String(decrypted, UTF_8);
     }
 
-
-    /** Modified version of  Athanasios Giannetsos scripts provided in LAB#2*/
-    /** Method assumes that "Certificate" is present in root project dir! - OR ELSE a full path is provided
-     * @param Certificate*/
     public static PublicKey ExtractPubKeyFromCert(Certificate Certificate) {
+        /** Method to extract the public key from a certificate*/
         X509Certificate c = (X509Certificate) Certificate;
         return c.getPublicKey();
     }
     public static PrivateKey ExtractPrivKeyFromJKS(String keyStore, String KeyStorePass, String alias, String keyPass)
             throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException {
-        // load information into a keystore
+        /**Method to extract the private key from a JKS*/
         java.security.KeyStore ks = java.security.KeyStore.getInstance( "JKS" );
         java.io.FileInputStream ksfis = new java.io.FileInputStream( keyStore );
         java.io.BufferedInputStream ksbufin = new java.io.BufferedInputStream( ksfis );
         ks.load( ksbufin, KeyStorePass.toCharArray() );
-        java.security.cert.Certificate cert = ks.getCertificate(alias);
         return (PrivateKey) ks.getKey( alias, keyPass.toCharArray() );
 
     }
 
     public static Certificate ExtractCertFromJKS(String keyStore, String KeyStorePass, String alias)
             throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
-        // load information into a keystore
+        /**Method to extract certificate from a JKS*/
         java.security.KeyStore ks = java.security.KeyStore.getInstance( "JKS" );
         java.io.FileInputStream ksfis = new java.io.FileInputStream( keyStore );
         java.io.BufferedInputStream ksbufin = new java.io.BufferedInputStream( ksfis );
@@ -131,21 +124,14 @@ public class cryptoManager {
     }
 
     public static Certificate ExtractCerFromPath(String path) throws FileNotFoundException, CertificateException {
+        /**Method to extract certificate from a path, e.g. C:/SomeDir/AnotherDir/xx.cer*/
         FileInputStream fr = new FileInputStream(path);
         CertificateFactory cf = CertificateFactory.getInstance("X509");
         return cf.generateCertificate(fr);
     }
 
-    //Example of call:
-
-//    String keyStore = "ServerKeyStore.jks"; // keystore file should in the program folder of the application
-//    String keyStorePass = "password"; // password of keystore
-//
-//    java.security.cert.Certificate cert = ExtractCertFromJKS(keyStore, keyStorePass, "server");
-//        System.out.println(cert);
-
-
     public static void SendCert(java.security.cert.Certificate Cert, ObjectOutputStream socketWriter){
+        /**Method to transmit a certificate with a ObjectOutputStream*/
         try {
             socketWriter.writeObject(Cert);
         } catch (IOException e) {
@@ -155,6 +141,7 @@ public class cryptoManager {
     }
 
     public static java.security.cert.Certificate ReceiveCert(ObjectInputStream socketReader) {
+        /**Method to Receive a certificate from a ObjectInputStream*/
         java.security.cert.Certificate Cert = null;
         try {
             Cert = (java.security.cert.Certificate) socketReader.readObject();
@@ -164,21 +151,26 @@ public class cryptoManager {
         return Cert;
     }
 
-    public static byte[] encrypt_RSA(PublicKey key, byte[] plaintext) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    public static byte[] encrypt_RSA(PublicKey key, byte[] plaintext) throws NoSuchAlgorithmException,
+            NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
     {
+        /**Method to use RSA encryption with a public key*/
         Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher.doFinal(plaintext);
     }
 
-    public static byte[] decrypt_RSA(PrivateKey key, byte[] ciphertext) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    public static byte[] decrypt_RSA(PrivateKey key, byte[] ciphertext) throws NoSuchAlgorithmException,
+            NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
     {
+        /**Method to use RSA decryption with a public key*/
         Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
         cipher.init(Cipher.DECRYPT_MODE, key);
         return cipher.doFinal(ciphertext);
     }
 
     public static void VerifyCert(java.security.cert.Certificate cert, PublicKey pubkey) {
+        /**Method verify a certificate was signed with the private key corresponding to the public key given*/
         try{
             cert.verify(pubkey);
             System.out.println("Certificate Verified!");
