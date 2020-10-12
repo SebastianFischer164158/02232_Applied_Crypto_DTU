@@ -143,18 +143,16 @@ public class SocketConnectionHandler implements Runnable
             socketWriter = new ObjectOutputStream( handleConnection.getOutputStream() );
             socketReader = new ObjectInputStream( handleConnection.getInputStream() );
 
-            //Server should always send his (signed) cert to the client connecting
-            //Let's assumme that the jks is called "ServerKeyStore" with password = "password" and
-            // the cert for the server itself has the alias "server"
-            // see cryptomanager
-
             /** First the server sends the certificate to the client*/
             java.security.cert.Certificate ServerCert;
             try {
+                /** Extract the server certificate from his JKS*/
                 ServerCert = ExtractCertFromJKS(cryptoManager.ServerKeyStore, cryptoManager.ServerKeyStorePass,
                         cryptoManager.Serveralias);
+                /** Extract the public key from the extracted certificate*/
                 ServerPubKey_ServSide = ExtractPubKeyFromCert(ServerCert);
                 System.out.println("Sent Server Cert to Client!");
+                /** Transmit the certificate to the socket*/
                 cryptoManager.SendCert(ServerCert, socketWriter);
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
@@ -165,34 +163,34 @@ public class SocketConnectionHandler implements Runnable
             System.out.println(ClientCert);
             System.out.println("<<<<<<<<<<<<<<<<END Cert Received END>>>>>>>>>>>>>>>>>>");
             /** Verify that the certificate was signed by the trusted CA!*/
-            System.out.println("ROOT CA -> -> -> -> " + Base64.getEncoder().encodeToString(RootCAPubKey.getEncoded()));
-            //verify the client cert has been signed by the rootcapubkey
-            // signature does not match atm, try and generate all new certificates once again. and try again.
-            cryptoManager.VerifyCert(ClientCert, RootCAPubKey);
+            // System.out.println("ROOT CA -> -> -> -> " + Base64.getEncoder().encodeToString(RootCAPubKey.getEncoded()));
+            /** Verify that the received client certificate was signed using the private key corresponding to the publickey of the rootca*/
+            cryptoManager.VerifyCert(ClientCert, RootCAPubKey); //Will throw exception if not verified!
 
-            // Extract the pub key from the cert
+            /** Extract the client's public key from the cert */
             PublicKey clientPublicKey = ExtractPubKeyFromCert(ClientCert);
-
-            // Generate a random AES key and encrypt it with RSA, and send it off to the Client
-            // Store the generated key in Clients_SecretKeys_ServerSide (Alice, secretKey)
+            /** Generate a random 256 bit AES Key*/
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
             keyGenerator.init(256);
             SecretKey AES_KEY = keyGenerator.generateKey();
             byte[] AES_key_as_bytes = AES_KEY.getEncoded();
+            /** Encrypt the randomly generated key with the public key of the client*/
             byte[] encrypted_AES_key = cryptoManager.encrypt_RSA(clientPublicKey, AES_key_as_bytes);
-            // Send the encrypted AES key to the Client
+            /** Send the encrypted AES key to the client, so that we now have a shared secret!*/
             socketWriter.writeObject(encrypted_AES_key);
 
-            /** Read the username */
-            //byte[] EncryptedUserName = (byte[]) socketReader.readObject();
-            //byte[] DecryptedUserName = cryptoManager.decrypt_RSA(ServerPrivateKey, EncryptedUserName);
-            //userName = new String(DecryptedUserName, StandardCharsets.UTF_8);
+            //byte[] EncryptedUserName = (byte[]) socketReader.readObject(); --> public key crypto version
+            //byte[] DecryptedUserName = cryptoManager.decrypt_RSA(ServerPrivateKey, EncryptedUserName); ^
+            //userName = new String(DecryptedUserName, StandardCharsets.UTF_8); ^
+
+            /** Read the username from the client */
             String EncryptedUserName = (String) socketReader.readObject();
+            /** Decrypt the username with the symmetric AES key*/
             userName = cryptoManager.decrypt(EncryptedUserName, AES_KEY);
 
-            // Store the Client's cert, based on the username
+            /** Store the Client's certificate in a hash table with the username as key*/
             Clients_PublicKeys_ServerSide.put(userName, clientPublicKey);
-            // Store the secret key linked to the client's username.
+            /** Store the Shared secret AES key in a hash table with the username as key*/
             Clients_SecretKeys_ServerSide.put(userName, AES_KEY);
 
             System.out.println("Received username: " + userName);
