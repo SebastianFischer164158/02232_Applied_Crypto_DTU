@@ -81,12 +81,10 @@ public class P2PClient extends JFrame implements ActionListener
     /** Setup Diffie Hellman Properties flags*/
     private Boolean diffieExchange = false;
     private Boolean secretSend = false;
-    private Boolean peerSecretReceived = false;
-    private BigInteger calcedSenderValue;
-    private BigInteger diffieSecret, agreedSecret;
-    private Boolean delayedMessageExist = false;
-    private String delayedMessage;
+    private volatile Boolean peerSecretReceived = false;
+    private BigInteger diffieSecret;
     private SecretKeySpec sharedSecret;
+    private BigInteger receivedPeerKey;
     
     P2PClient(){
         super("P2P Client Chat");
@@ -166,7 +164,28 @@ public class P2PClient extends JFrame implements ActionListener
     {
         return new BigInteger(bitSize, new SecureRandom());
     }
-    
+
+    public void DiffieHellmanExchange() throws Exception {
+        // We should always send our secret if we have not.
+        if (!secretSend)
+        {
+            diffieSecret = GenerateBigInteger(2048);
+            BigInteger calcedSenderValue = g.modPow(diffieSecret, p);
+            this.send(String.valueOf(calcedSenderValue));
+            secretSend = true;
+        }
+
+        // Get stuck here until the thread of receiving messages, receives the public key from counter peer.
+        while(!peerSecretReceived)
+        {
+        }
+
+        BigInteger agreedSecret = receivedPeerKey.modPow(diffieSecret, p);
+        sharedSecret = PerformSha256(agreedSecret);
+
+        diffieExchange = true;
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         Object o = e.getSource();
@@ -191,31 +210,24 @@ public class P2PClient extends JFrame implements ActionListener
         }
         else if ( o == Send )
         {
+            String msg = tf.getText();
             /** Try to send the message to the other communicating party, if we have been connected... */
             if ( isConnected == true )
             {
+                //Whenever send is pressed and diffie Hellman exchange isn't performed, it should be.
                 if (!diffieExchange){
-                    if (!secretSend)
-                    {
-                        diffieSecret = GenerateBigInteger(2048);
-                        calcedSenderValue = g.modPow(diffieSecret, p);
-                        try {
-                            this.send(String.valueOf(calcedSenderValue));
-                            secretSend = true;
-                        } catch (Exception exception) {
-                            exception.printStackTrace();
-                        }
-                    }
-                    delayedMessageExist = true;
-                    delayedMessage = tf.getText();
-                }
-                else
-                {
                     try {
-                        this.send( cryptoManager.encrypt(tf.getText(), sharedSecret));
+                        //CertificateExchange();
+                        DiffieHellmanExchange();
                     } catch (Exception exception) {
                         exception.printStackTrace();
                     }
+                }
+                // From the point where Diffiehellman exchange is done, the message should just be encrypted and send.
+                try {
+                    this.send( cryptoManager.encrypt(msg, sharedSecret));
+                } catch (Exception exception) {
+                    exception.printStackTrace();
                 }
             }
         }
@@ -325,15 +337,14 @@ public class P2PClient extends JFrame implements ActionListener
     
     public boolean send(String str) throws Exception {
         try {
-            if (diffieExchange)
-            {
-                sOutput.writeObject(new ChatMessage(str.length(), str));
-                display("You: " + cryptoManager.decrypt(str, sharedSecret));
-            }
 
             sOutput.writeObject(new ChatMessage(str.length(), str));
-            System.out.println("You: " + str);
-            System.out.println("---------------------------------------");
+
+            if (diffieExchange)
+                display("You: " + cryptoManager.decrypt(str, sharedSecret));
+            else
+                System.out.println("You: " + str);
+
 
         } catch (IOException ex) {
             display("The Client's Server Socket was closed!!\nException creating output stream: " + ex.getMessage());
@@ -389,65 +400,28 @@ public class P2PClient extends JFrame implements ActionListener
                     {
                         if ( !clientConnect )
                         {
-                            socket = serverSocket.accept();  	// accept connection                    
+                            socket = serverSocket.accept();  	// accept connection
                             sInput = new ObjectInputStream(socket.getInputStream());
                             clientConnect = true;
                         }
-                    } 
-                    catch (IOException ex) 
+                    }
+                    catch (IOException ex)
                     {
                             display("The Socket Server was closed: " + ex.getMessage());
-                    } 
+                    }
                     
                     // format message saying we are waiting
                     try {
                         String msg = ((ChatMessage) sInput.readObject()).getMessage();
 
-                        /** Execute Diffie Hellman*/
-                        if (!peerSecretReceived){
-                            System.out.println("Msg:"+msg);
-
-                            if (!secretSend){
-                                diffieSecret = GenerateBigInteger(2048);
-                                calcedSenderValue = g.modPow(diffieSecret, p);
-                                send(String.valueOf(calcedSenderValue));
-                                secretSend = true;
-                            }
-
-                            /** Create Diffie Hellman Integer from the msg*/
-
-                            BigInteger receivedPeerKey = new BigInteger(msg);
-                            agreedSecret = receivedPeerKey.modPow(diffieSecret, p);
-
-
-                            sharedSecret = PerformSha256(agreedSecret);
-
-                            System.out.println("SharedSecret: "+sharedSecret.hashCode());
-                            System.out.println("p: " + p);
-                            System.out.println("g: " + g);
-                            System.out.println("Sender calculated Value: " + calcedSenderValue);
-                            System.out.println("My choosen Secret: " + diffieSecret);
-                            System.out.println("Agreed Secret: " + agreedSecret);
-                            System.out.println("------------------------------------------------------");
-
-                            diffieExchange = true;
+                        if (!diffieExchange){
+                            receivedPeerKey = new BigInteger(msg);
                             peerSecretReceived = true;
-
-                            if (delayedMessageExist){
-                                send(cryptoManager.encrypt(delayedMessage,sharedSecret));
-                                delayedMessageExist = false;
-                            }
-
-                        } else {
-                            System.out.println("p: " + p);
-                            System.out.println("g: " + g);
-                            System.out.println("Sender calculated Value: " + calcedSenderValue);
-                            System.out.println("My choosen Secret: " + diffieSecret);
-                            System.out.println("Agreed Secret: " + agreedSecret);
-
+                            DiffieHellmanExchange();
+                        }
+                        else {
+                            System.out.println(socket.getInetAddress()+": " + socket.getPort() + ": " + msg);
                             display(socket.getInetAddress()+": " + socket.getPort() + ": " + cryptoManager.decrypt(msg, sharedSecret));
-
-                            System.out.println("------------------------------------------------------");
                         }
                     }
                     catch (IOException ex) 
