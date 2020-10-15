@@ -176,6 +176,7 @@ public class P2PClient extends JFrame implements ActionListener
         }
 
         // Get stuck here until the thread of receiving messages, receives the public key from counter peer.
+        // While loop is controlled by a volatile variable meaning that it is visible to all threads.
         while(!peerSecretReceived)
         {
         }
