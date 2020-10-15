@@ -151,7 +151,7 @@ public class cryptoManager {
         return Cert;
     }
 
-    public static byte[] encrypt_RSA(PublicKey key, byte[] plaintext) throws NoSuchAlgorithmException,
+    public static byte[] encrypt_RSA(Key key, byte[] plaintext) throws NoSuchAlgorithmException,
             NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
     {
         /**Method to use RSA encryption with a public key*/
@@ -160,7 +160,7 @@ public class cryptoManager {
         return cipher.doFinal(plaintext);
     }
 
-    public static byte[] decrypt_RSA(PrivateKey key, byte[] ciphertext) throws NoSuchAlgorithmException,
+    public static byte[] decrypt_RSA(Key key, byte[] ciphertext) throws NoSuchAlgorithmException,
             NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
     {
         /**Method to use RSA decryption with a public key*/
