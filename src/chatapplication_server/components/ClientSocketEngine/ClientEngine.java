@@ -115,10 +115,11 @@ public class ClientEngine extends GenericThreadedComponent
             System.out.println("<<<<<<<<<<<<<<<<Server Cert Received>>>>>>>>>>>>>>>>>>");
             System.out.println(ServerCert);
             System.out.println("<<<<<<<<<<<<<<<<END Server Cert Received END>>>>>>>>>>>>>>>>>>");
-            cryptoManager.ServerPubKey_ClientSide = cryptoManager.ExtractPubKeyFromCert(ServerCert);
-            System.out.println("Extracted Server PublicKey : \n" + ServerPubKey_ClientSide);
             /** Verify that the certificate was signed by the trusted CA!*/
             cryptoManager.VerifyCert(ServerCert, RootCAPubKey);
+            cryptoManager.ServerPubKey_ClientSide = cryptoManager.ExtractPubKeyFromCert(ServerCert);
+            System.out.println("Extracted Server PublicKey : \n" + ServerPubKey_ClientSide);
+
 
             /** we then extract the client's respective certificate from the JKS and send it off to the server*/
 
