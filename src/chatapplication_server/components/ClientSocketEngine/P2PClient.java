@@ -85,6 +85,8 @@ public class P2PClient extends JFrame implements ActionListener
     private BigInteger diffieSecret;
     private SecretKeySpec sharedSecret;
     private BigInteger receivedPeerKey;
+
+    private volatile Boolean clientConnect = false;
     
     P2PClient(){
         super("P2P Client Chat");
@@ -202,7 +204,15 @@ public class P2PClient extends JFrame implements ActionListener
                 }
                 
                 /** Connect to the Socket Server instantiated by the other client... */
-                this.connect();
+                if(this.connect()){
+                    while(!clientConnect){
+                    }
+                    
+                    System.out.println("I am now both connected and have a connection");
+
+
+                }
+
             }
             else if ( connectStop.getText().equals( "Disconnect" ) && isConnected == true )
             {
@@ -371,7 +381,6 @@ public class P2PClient extends JFrame implements ActionListener
         ServerSocket serverSocket;
         Socket socket;
         ObjectInputStream sInput = null;
-        boolean clientConnect;
         
             public ListenFromClient() 
             {
