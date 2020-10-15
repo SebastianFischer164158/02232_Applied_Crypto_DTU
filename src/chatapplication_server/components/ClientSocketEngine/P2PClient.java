@@ -249,6 +249,7 @@ public class P2PClient extends JFrame implements ActionListener
         }
 
         // Get stuck here until the thread of receiving messages, receives the public key from counter peer.
+        // While loop is controlled by a volatile variable meaning that it is visible to all threads.
         while(!peerSecretReceived)
         {
         }
@@ -436,7 +437,7 @@ public class P2PClient extends JFrame implements ActionListener
         ServerSocket serverSocket;
         Socket socket;
         ObjectInputStream sInput = null;
-        boolean clientConnect;
+        boolean clientConnect = false;
         
             public ListenFromClient() 
             {
@@ -446,7 +447,6 @@ public class P2PClient extends JFrame implements ActionListener
                     serverSocket = new ServerSocket(Integer.parseInt(tfsPort.getText()));
                     ta.append("Server is listening on port:"+tfsPort.getText() + "\n");
                     ta.setCaretPosition(ta.getText().length() - 1);
-                    clientConnect = false;
                     keepGoing = true;
                 }
                 catch ( IOException ioe )

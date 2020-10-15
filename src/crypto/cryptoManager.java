@@ -155,7 +155,7 @@ public class cryptoManager {
             NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
     {
         /**Method to use RSA encryption with a public key*/
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA256AndMGF1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher.doFinal(plaintext);
     }
@@ -164,7 +164,7 @@ public class cryptoManager {
             NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
     {
         /**Method to use RSA decryption with a public key*/
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA256AndMGF1Padding");
         cipher.init(Cipher.DECRYPT_MODE, key);
         return cipher.doFinal(ciphertext);
     }
