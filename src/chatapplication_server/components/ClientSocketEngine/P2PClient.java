@@ -31,7 +31,6 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,19 +70,15 @@ public class P2PClient extends JFrame implements ActionListener
     boolean isConnected;
 
     /** Define 2048 bits p & g as defined in Java 8 docs (ref.) */
-    //private final BigInteger p = new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80" +
-    //        "b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b" +
-    //        "1022c24fbba9d7feb7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff2" +
-    //        "2203199dd14801c7", 16);
+    private final BigInteger p = new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80" +
+            "b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b" +
+            "1022c24fbba9d7feb7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff2" +
+            "2203199dd14801c7", 16);
 
-    //private final BigInteger g = new BigInteger("f7e1a085d69b3ddecbbcab5c36b857b97994afbbfa3aea82f9574c0b3" +
-    //        "d0782675159578ebad4594fe67107108180b449167123e84c281613b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2b" +
-    //        "b3a675916ea37f0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06928b665e807b552564014c3bfec" +
-     //       "f492a", 16);
-    //private final BigInteger p = new BigInteger("fca682ce8e12caba26efccf7110e526db078b05edecbcd1eb4a208f3ae1617ae01f35b91a47e6df63413c5e12ed0899bcd132acd50d99151bdc43ee737592e17",16);
-    //private final BigInteger g = new BigInteger("678471b27a9cf44ee91a49c5147db1a9aaf244f05a434d6486931d2d14271b9e35030b71fd73da179069b32e2935630e1c2062354d0da20a6c416e50be794ca4",16);
-    private final BigInteger p = new BigInteger("23");
-    private final BigInteger g = new BigInteger("5");
+    private final BigInteger g = new BigInteger("f7e1a085d69b3ddecbbcab5c36b857b97994afbbfa3aea82f9574c0b3" +
+            "d0782675159578ebad4594fe67107108180b449167123e84c281613b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2b" +
+            "b3a675916ea37f0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06928b665e807b552564014c3bfec" +
+            "f492a", 16);
 
     /** Setup Diffie Hellman Properties flags*/
     private Boolean diffieExchange = false;
@@ -100,7 +95,7 @@ public class P2PClient extends JFrame implements ActionListener
 
     private volatile Boolean receivedPeerCertificate = false;
     java.security.cert.Certificate peerCertificate;
-    private static PublicKey PeerPubKey_Cert; //gets set by a client.
+    private static PublicKey PeerPublicKey; //gets set by a client.
     private static PrivateKey MyPrivKey;
     private Boolean certSent = false;
     BigInteger calcedSenderValue = null;
@@ -192,7 +187,6 @@ public class P2PClient extends JFrame implements ActionListener
 
         byte[] encodedhash = digest.digest(agreedScret.toString().getBytes(StandardCharsets.UTF_8));
 
-        System.out.println("After Sha256 encode: "+ Arrays.toString(encodedhash));
         return new SecretKeySpec(encodedhash, "AES");
     }
     public void CertificateExchange() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, UnrecoverableKeyException {
@@ -226,25 +220,18 @@ public class P2PClient extends JFrame implements ActionListener
 
         /** Verify that the Certificate was signed by the trusted CA!*/
         cryptoManager.VerifyCert(peerCertificate, RootCAPubKey);
-        PeerPubKey_Cert = cryptoManager.ExtractPubKeyFromCert(peerCertificate);
+        PeerPublicKey = cryptoManager.ExtractPubKeyFromCert(peerCertificate);
     }
 
-    public void DiffieHellmanExchange() throws Exception {
-
+    public void DiffieHellmanExchange() throws Exception
+    {
         // We should always send our secret.
         if (!secretSend)
         {
-            diffieSecret = new BigInteger("3");
-            if(iAmAlice)
-                diffieSecret = new BigInteger("4");// GenerateBigInteger(512);
-
+            diffieSecret = GenerateBigInteger(2048);
             calcedSenderValue = g.modPow(diffieSecret, p);
-            System.out.println("A");
-            byte[] calcedSenderValue_encrypted = cryptoManager.encrypt_RSA(PeerPubKey_Cert, calcedSenderValue.toByteArray());
-            System.out.println("B");
-            System.out.println("Encr");
-            this.send(Arrays.toString(calcedSenderValue_encrypted));
-            System.out.println("C");
+            byte[] calcedSenderValue_encrypted = cryptoManager.encrypt_RSA(MyPrivKey, calcedSenderValue.toByteArray());
+            sOutput.writeObject(calcedSenderValue_encrypted);
             secretSend = true;
         }
 
@@ -486,19 +473,15 @@ public class P2PClient extends JFrame implements ActionListener
                             CertificateExchange();
                         }
                         else {
-                            String msg = ((ChatMessage) sInput.readObject()).getMessage();
-                            System.out.println("My private: " + MyPrivKey);
-                            System.out.println("Decrypt this: "+ msg);
-                            byte[] decryptedMessage = cryptoManager.decrypt_RSA(MyPrivKey, msg.getBytes());
-                            BigInteger someint = new BigInteger(decryptedMessage);
-                            System.out.println("Diffie parameter: " + someint);
-                            System.out.println("I'm never getting here???");
                             if (!peerSecretReceived){
-                                receivedPeerKey = new BigInteger(Arrays.toString(decryptedMessage));
+                                byte[] msg = (byte[]) sInput.readObject();
+                                byte[] decryptedMessage = cryptoManager.decrypt_RSA(PeerPublicKey, msg);
+                                receivedPeerKey = new BigInteger(decryptedMessage);
                                 peerSecretReceived = true;
                                 DiffieHellmanExchange();
                             }
                             else {
+                                String msg = ((ChatMessage) sInput.readObject()).getMessage();
                                 System.out.println(socket.getInetAddress()+": " + socket.getPort() + ": " + msg);
                                 display(socket.getInetAddress()+": " + socket.getPort() + ": " + cryptoManager.decrypt(msg, sharedSecret));
                             }
