@@ -174,14 +174,17 @@ public class SocketConnectionHandler implements Runnable
             keyGenerator.init(256);
             SecretKey AES_KEY = keyGenerator.generateKey();
             byte[] AES_key_as_bytes = AES_KEY.getEncoded();
-            /** Encrypt the randomly generated key with the public key of the client*/
+            PrivateKey ServerPrivKey_ServSide = ExtractPrivKeyFromJKS(ServerKeyStore,ServerKeyStorePass, Serveralias, ServerKeyStorePass);
+            //Let's do a digital signature to provide authenticity and integrity.
+            byte[] signatureBytes = cryptoManager.SignMsg(AES_key_as_bytes, ServerPrivKey_ServSide);
+            /** Encrypt the AES key*/
             byte[] encrypted_AES_key = cryptoManager.encrypt_RSA(clientPublicKey, AES_key_as_bytes);
-            /** Send the encrypted AES key to the client, so that we now have a shared secret!*/
-            socketWriter.writeObject(encrypted_AES_key);
-
-            //byte[] EncryptedUserName = (byte[]) socketReader.readObject(); --> public key crypto version
-            //byte[] DecryptedUserName = cryptoManager.decrypt_RSA(ServerPrivateKey, EncryptedUserName); ^
-            //userName = new String(DecryptedUserName, StandardCharsets.UTF_8); ^
+            /**Collect the signature + the encrypted AES key */
+            byte[] signature_and_enc_key = new byte[signatureBytes.length + encrypted_AES_key.length];
+            System.arraycopy(signatureBytes, 0, signature_and_enc_key, 0, signatureBytes.length);
+            System.arraycopy(encrypted_AES_key, 0, signature_and_enc_key, signatureBytes.length, encrypted_AES_key.length);
+            /** Send the signature + encrypted AES key to the client, so that we now have a shared secret!*/
+            socketWriter.writeObject(signature_and_enc_key);
 
             /** Read the username from the client */
             String EncryptedUserName = (String) socketReader.readObject();
