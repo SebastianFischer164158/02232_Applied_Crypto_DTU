@@ -31,6 +31,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -230,8 +231,15 @@ public class P2PClient extends JFrame implements ActionListener
         {
             diffieSecret = GenerateBigInteger(2048);
             calcedSenderValue = g.modPow(diffieSecret, p);
-            byte[] calcedSenderValue_encrypted = cryptoManager.encrypt_RSA(MyPrivKey, calcedSenderValue.toByteArray());
-            sOutput.writeObject(calcedSenderValue_encrypted);
+            byte[] calcedSenderValue_bytes = calcedSenderValue.toByteArray();
+            /** Declare arrays for the signature, and the DH parameter*/
+            byte[] signatureBytes = cryptoManager.SignMsg(calcedSenderValue_bytes, MyPrivKey); //always 512
+            byte[] signature_and_calcedSenderValue = new byte[signatureBytes.length + calcedSenderValue_bytes.length];
+            //byte[] calcedSenderValue_encrypted = cryptoManager.encrypt_RSA(MyPrivKey, calcedSenderValue.toByteArray());
+            /** Combine the digital signature and the DH Parmeter */
+            System.arraycopy(signatureBytes, 0, signature_and_calcedSenderValue, 0, signatureBytes.length);
+            System.arraycopy(calcedSenderValue_bytes, 0, signature_and_calcedSenderValue, signatureBytes.length, calcedSenderValue_bytes.length);
+            sOutput.writeObject(signature_and_calcedSenderValue);
             secretSend = true;
         }
 
@@ -253,7 +261,7 @@ public class P2PClient extends JFrame implements ActionListener
         
         if ( o == connectStop )
         {
-            if ( connectStop.getText().equals( "Connect" ) && isConnected == false )
+            if ( connectStop.getText().equals( "Connect" ) && !isConnected)
             {
                 if ( tfPort.getText().equals( ConfigManager.getInstance().getValue( "Server.PortNumber" ) ) )
                 {
@@ -264,7 +272,7 @@ public class P2PClient extends JFrame implements ActionListener
                 /** Connect to the Socket Server instantiated by the other client... */
                 this.connect();
             }
-            else if ( connectStop.getText().equals( "Disconnect" ) && isConnected == true )
+            else if ( connectStop.getText().equals( "Disconnect" ) && isConnected)
             {
                 this.disconnect();
             }
@@ -273,7 +281,7 @@ public class P2PClient extends JFrame implements ActionListener
         {
             String msg = tf.getText();
             /** Try to send the message to the other communicating party, if we have been connected... */
-            if ( isConnected == true )
+            if (isConnected)
             {
                 //Whenever send is pressed and diffie Hellman exchange isn't performed, it should be.
                 if (!diffieExchange){
@@ -297,14 +305,14 @@ public class P2PClient extends JFrame implements ActionListener
         }
         else if(o == stopStart)
         {
-            if ( stopStart.getText().equals( "Start" ) && isRunning == false)
+            if ( stopStart.getText().equals( "Start" ) && !isRunning)
             {
                 clientServer = new ListenFromClient();
                 clientServer.start();
                 isRunning = true;
                 stopStart.setText( "Stop" );
             }
-            else if ( stopStart.getText().equals( "Stop" ) && isRunning == true )
+            else if ( stopStart.getText().equals( "Stop" ) && isRunning)
             {
                 clientServer.shutDown();
                 clientServer.stop();
@@ -328,7 +336,7 @@ public class P2PClient extends JFrame implements ActionListener
     {
         /* Try to connect to the Socket Server... */
         try {
-                if (isConnected == false)
+                if (!isConnected)
                 {
                     socket = new Socket(tfServer.getText(), Integer.parseInt(tfPort.getText()));
                    
@@ -369,7 +377,7 @@ public class P2PClient extends JFrame implements ActionListener
         /** Disconnect from the Socket Server that we are connected... */
         try
         {
-            if ( isConnected == true )
+            if (isConnected)
             {
                 /** First, close the output stream... */
                 sOutput.close();
@@ -475,10 +483,19 @@ public class P2PClient extends JFrame implements ActionListener
                         else {
                             if (!peerSecretReceived){
                                 byte[] msg = (byte[]) sInput.readObject();
-                                byte[] decryptedMessage = cryptoManager.decrypt_RSA(PeerPublicKey, msg);
-                                receivedPeerKey = new BigInteger(decryptedMessage);
-                                peerSecretReceived = true;
-                                DiffieHellmanExchange();
+                                /** Declare arrays for the signature and the DH Param*/
+                                byte[] signature = new byte[512];
+                                byte[] DHParam = Arrays.copyOfRange(msg, 512, msg.length);
+                                /** Extract the digital signature and DH paramtere*/
+                                System.arraycopy(msg, 0, signature, 0, signature.length);
+                                /** Verify the signature */
+                                if(cryptoManager.VerifySign(DHParam, signature, PeerPublicKey)) {
+                                    System.out.println("Signature matches, extracting the DH Param");
+                                    byte[] decryptedMessage = DHParam;//cryptoManager.decrypt_RSA(PeerPublicKey, msg);
+                                    receivedPeerKey = new BigInteger(decryptedMessage);
+                                    peerSecretReceived = true;
+                                    DiffieHellmanExchange();
+                                }
                             }
                             else {
                                 String msg = ((ChatMessage) sInput.readObject()).getMessage();
