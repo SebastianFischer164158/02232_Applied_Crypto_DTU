@@ -17,6 +17,8 @@ import java.io.ObjectOutputStream;
 import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
+
 import crypto.cryptoManager;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -154,16 +156,32 @@ public class ClientEngine extends GenericThreadedComponent
                 e.printStackTrace();
             }
 
-            /** Receive the encrypted symmetric key */
-            byte[] Encrypted_AES_key_from_server = (byte[]) socketReader.readObject();
+            /** Receive the Signature + encrypted symmetric key */
+            byte[] signature_and_Encrypted_AES_key_from_server = (byte[]) socketReader.readObject();
             /** Extract Private Key of the Client from JKS */
             PrivateKey ClientPrivateKey = ExtractPrivKeyFromJKS(ClientKeyStore, ClientKeyStorePass, Clientalias, ClientKeyStorePass);
             /** Decrypt the received symmetric key with public crypto RSA*/
-            AES_s_client_key = cryptoManager.decrypt_RSA(ClientPrivateKey, Encrypted_AES_key_from_server);
-            /** set the SecretKeySpec for AES, based on the now decrypted AES key*/
-            AES_secret_client_key = new SecretKeySpec(AES_s_client_key, "AES");
-            /** Start the ListeFromServer thread... */
-            new ListenFromServer().start();
+
+            byte[] signature = new byte[512];
+            byte[] encrypted_aes_key = new byte[512];
+            /** Extract the digital signature and the encrypted AES key*/
+            System.arraycopy(signature_and_Encrypted_AES_key_from_server, 0, signature, 0, signature.length);
+            System.arraycopy(signature_and_Encrypted_AES_key_from_server, 512, encrypted_aes_key, 0, encrypted_aes_key.length);
+            /** Decrypt the AES key */
+            AES_s_client_key = cryptoManager.decrypt_RSA(ClientPrivateKey, encrypted_aes_key);
+            /**Verify the digital signature for authenticity and integrity */
+            if(cryptoManager.VerifySign(AES_s_client_key, signature, ServerPubKey_ClientSide)){
+                System.out.println("Signature matches! - Extracting Secret AES Key");
+                /** set the SecretKeySpec for AES, based on the now decrypted AES key*/
+                AES_secret_client_key = new SecretKeySpec(AES_s_client_key, "AES");
+                /** Start the ListeFromServer thread... */
+                new ListenFromServer().start();
+
+            }
+            else{
+                throw new Exception("ERROR - VERIFICATION OF SIGNATURE FAILED!");
+            }
+
         }
         catch (IOException | ClassNotFoundException ioe )
         {
@@ -176,8 +194,6 @@ public class ClientEngine extends GenericThreadedComponent
         {
             /**Encrypt the username with the symmetric key in order to stop impersonation attacks*/
             String UserNameEncrypted = encrypt(UserName, AES_secret_client_key);
-            /**Public crypto version*/
-            //byte[] UserNameEncrypted = cryptoManager.encrypt_RSA(ServerPubKey_ClientSide, UserName.getBytes());
             System.out.println("Sending encrypted username to server"+ UserNameEncrypted);
             socketWriter.writeObject(UserNameEncrypted);
         }
