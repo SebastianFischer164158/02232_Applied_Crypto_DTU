@@ -169,6 +169,20 @@ public class cryptoManager {
         return cipher.doFinal(ciphertext);
     }
 
+    public static byte[] SignMsg(byte[] plaintext, PrivateKey privkey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        Signature signer = Signature.getInstance("SHA256WithRSA");
+        signer.initSign(privkey);
+        signer.update(plaintext);
+        return signer.sign();
+    }
+
+    public static boolean VerifySign(byte[] plaintext, byte[] signature, PublicKey pubkey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        Signature signer = Signature.getInstance("SHA256WithRSA");
+        signer.initVerify(pubkey);
+        signer.update(plaintext);
+        return signer.verify(signature);
+    }
+
     public static void VerifyCert(java.security.cert.Certificate cert, PublicKey pubkey) {
         /**Method verify a certificate was signed with the private key corresponding to the public key given*/
         try{
