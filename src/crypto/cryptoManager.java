@@ -45,23 +45,23 @@ public class cryptoManager {
 
     static {
         try {
+            /** Extract the RootCA Certificate from the path defined above */
             RootCACert = ExtractCerFromPath(RootCACert_path);
         } catch (FileNotFoundException | CertificateException e) {
             e.printStackTrace();
         }
     }
-
+    /** Extract the Public Key from the Certificate of the RootCA*/
     public final static PublicKey RootCAPubKey = ExtractPubKeyFromCert(RootCACert);
-
+    /**HashMap used by the Server to store the connecting Client's PublicKey*/
     public static HashMap<String,PublicKey> Clients_PublicKeys_ServerSide = new HashMap<>();
-    // wanted to use a single hashamp with Username as key, and a tuple with (pubkey, secretkey)
-    // but java makes it incredibly complicated to do such a simple thing.
+    /**HashMap used by the Server to store the connecting Client's random generated AES key*/
     public static HashMap<String,SecretKey> Clients_SecretKeys_ServerSide = new HashMap<>();
-
+    /** Variables used by the Client to assign their received AES key by the Server*/
     public static byte [] AES_s_client_key;
     public static SecretKeySpec AES_secret_client_key = null;
 
-    /** Encrypt function takes a String plaintext and a SecretKey masterkey.. */
+    /** Encrypt function takes a String plaintext and a SecretKey masterkey.. to perform AES256gcm*/
     public static String encrypt(String plaintext, SecretKey masterkey) throws Exception {
         /** Generate a random 12 byte IV! MUST BE UNIQUE AND NEVER RE-USED... */
         byte[] IV = new byte[12];
@@ -170,6 +170,7 @@ public class cryptoManager {
     }
 
     public static byte[] SignMsg(byte[] plaintext, PrivateKey privkey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        /**Method to create a digital signature of a message*/
         Signature signer = Signature.getInstance("SHA256WithRSA");
         signer.initSign(privkey);
         signer.update(plaintext);
@@ -177,6 +178,7 @@ public class cryptoManager {
     }
 
     public static boolean VerifySign(byte[] plaintext, byte[] signature, PublicKey pubkey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        /**Method to verify a digital signature */
         Signature signer = Signature.getInstance("SHA256WithRSA");
         signer.initVerify(pubkey);
         signer.update(plaintext);
