@@ -194,7 +194,7 @@ public class P2PClient extends JFrame implements ActionListener
         // Certificate
         java.security.cert.Certificate MyCert;
 
-        // Identification
+        /** Either a peer will be Bob or Alice */
         String keyStore = BobKeyStore;
         String keyStorePass = BobKeyStorePass;
         String alias = Bobalias;
@@ -205,9 +205,10 @@ public class P2PClient extends JFrame implements ActionListener
             keyStorePass = AliceKeyStorePass;
             alias = Alicealias;
         }
-
+        /** Extracting own private key from the keyStore*/
         MyPrivKey = cryptoManager.ExtractPrivKeyFromJKS(keyStore, keyStorePass, alias, keyStorePass);
 
+        /** Sends peers own certificate to the counter peer */
         if (!certSent){
             MyCert = ExtractCertFromJKS(keyStore, keyStorePass, alias);
             cryptoManager.SendCert(MyCert, sOutput);
@@ -229,6 +230,7 @@ public class P2PClient extends JFrame implements ActionListener
         // We should always send our secret.
         if (!secretSend)
         {
+            /** Prepare Diffiehellman exchange */
             diffieSecret = GenerateBigInteger(2048);
             calcedSenderValue = g.modPow(diffieSecret, p);
             byte[] calcedSenderValue_bytes = calcedSenderValue.toByteArray();
@@ -239,6 +241,7 @@ public class P2PClient extends JFrame implements ActionListener
             /** Combine the digital signature and the DH Parmeter */
             System.arraycopy(signatureBytes, 0, signature_and_calcedSenderValue, 0, signatureBytes.length);
             System.arraycopy(calcedSenderValue_bytes, 0, signature_and_calcedSenderValue, signatureBytes.length, calcedSenderValue_bytes.length);
+            /** send signed calculated values */
             sOutput.writeObject(signature_and_calcedSenderValue);
             secretSend = true;
         }
@@ -252,6 +255,7 @@ public class P2PClient extends JFrame implements ActionListener
         BigInteger agreedSecret = receivedPeerKey.modPow(diffieSecret, p);
         sharedSecret = PerformSha256(agreedSecret);
 
+        /** State that diffie hellman exchange is done */
         diffieExchange = true;
     }
 
@@ -286,7 +290,8 @@ public class P2PClient extends JFrame implements ActionListener
                 //Whenever send is pressed and diffie Hellman exchange isn't performed, it should be.
                 if (!diffieExchange){
                     try {
-                        //CertificateExchange();
+                        /** Starting both Certificate and Diffie Hellman exchange, when 'send' is pressed the first time.*/
+                        /** The first to press 'send' will be intialized as Alice.*/
                         iAmAlice = true;
                         CertificateExchange();
                         DiffieHellmanExchange();
@@ -473,7 +478,7 @@ public class P2PClient extends JFrame implements ActionListener
                     
                     // format message saying we are waiting
                     try {
-                        // Receive Certificate
+                        /** First message that will be received is the certificate */
                         if (!receivedPeerCertificate)
                         {
                             peerCertificate = cryptoManager.ReceiveCert(sInput);
@@ -481,6 +486,7 @@ public class P2PClient extends JFrame implements ActionListener
                             CertificateExchange();
                         }
                         else {
+                            /** Second message to be received is the counter peer diffiehellman property. */
                             if (!peerSecretReceived){
                                 byte[] msg = (byte[]) sInput.readObject();
                                 /** Declare arrays for the signature and the DH Param*/
